@@ -44,29 +44,31 @@ public class UserController {
     @PutMapping
     public ResponseEntity<String> updateUser(@Valid @RequestBody User user) {
         log.info("Попытка обновить данные пользователя: {}", user.getName());
+
         if (user.getId() == null || user.getId() <= 0) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body("Некорректный ID пользователя");
+        }
+
+        if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
+            throw new ValidationException("Некорректная электронная почта");
+        }
+        if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" ")) {
+            throw new ValidationException("Некорректный логин");
+        }
+        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
+            throw new ValidationException("Дата рождения не может быть в будущем");
         }
 
         for (int i = 0; i < users.size(); i++) {
-            if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
-                throw new ValidationException("Некорректная электронная почта");
+            if (users.get(i).getId().equals(user.getId())) {
+                users.set(i, user);
+                log.info("Пользователь с ID {} успешно обновлён", user.getId());
+                return ResponseEntity.ok("Пользователь обновлён: " + user.getName());
             }
-            if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" ")) {
-                throw new ValidationException("Некорректный логин");
-            }
-            if (user.getName() == null || user.getName().isBlank()) {
-                throw new ValidationException("Имя для отображения может быть пустым — в таком случае будет использован логин");
-            }
-            if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
-                throw new ValidationException("Дата рождения не может быть в будущем");
-            }
-            users.set(i, user);
-            return ResponseEntity.ok(user.getName());
         }
+
         return ResponseEntity.notFound().build();
     }
-
     @GetMapping
     public List<User> getAllUsers() {
         log.info("Попытка вывести список пользователей");
