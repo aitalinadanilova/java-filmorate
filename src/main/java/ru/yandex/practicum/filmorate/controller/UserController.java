@@ -69,6 +69,7 @@ public class UserController {
 
         return ResponseEntity.notFound().build();
     }
+
     @GetMapping
     public List<User> getAllUsers() {
         log.info("Попытка вывести список пользователей");
