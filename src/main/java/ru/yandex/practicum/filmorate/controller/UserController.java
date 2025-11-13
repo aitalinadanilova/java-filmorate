@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,33 +12,27 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
-
 @Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
+
     private final List<User> users = new ArrayList<>();
     private int nextId = 1;
 
     @PostMapping
-    public ResponseEntity<String> createUser(@Valid  @RequestBody User user) {
+    public ResponseEntity<String> createUser(@Valid @RequestBody User user) {
         log.info("Попытка создать пользователя: {}", user.getName());
-        if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
-            throw new ValidationException("Некорректная электронная почта");
-        }
-        if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" ")) {
-            throw new ValidationException("Некорректный логин");
-        }
+        validateUser(user);
+
         if (user.getName() == null || user.getName().isBlank()) {
-            throw new ValidationException("Имя для отображения может быть пустым — в таком случае будет использован логин");
+            user.setName(user.getLogin());
         }
-        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
+
         user.setId(nextId++);
         users.add(user);
 
+        log.info("Пользователь {} успешно создан с ID {}", user.getName(), user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(user.getName());
     }
 
@@ -49,15 +44,7 @@ public class UserController {
             return ResponseEntity.badRequest().body("Некорректный ID пользователя");
         }
 
-        if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
-            throw new ValidationException("Некорректная электронная почта");
-        }
-        if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" ")) {
-            throw new ValidationException("Некорректный логин");
-        }
-        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
+        validateUser(user);
 
         for (int i = 0; i < users.size(); i++) {
             if (users.get(i).getId().equals(user.getId())) {
@@ -67,12 +54,26 @@ public class UserController {
             }
         }
 
+        log.warn("Пользователь с ID {} не найден", user.getId());
         return ResponseEntity.notFound().build();
     }
 
     @GetMapping
     public List<User> getAllUsers() {
-        log.info("Попытка вывести список пользователей");
+        log.info("Запрошен список пользователей ({} всего)", users.size());
         return users;
     }
+
+    private void validateUser(User user) {
+        if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
+            throw new ValidationException("Некорректная электронная почта");
+        }
+        if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" ")) {
+            throw new ValidationException("Некорректный логин");
+        }
+        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
+            throw new ValidationException("Дата рождения не может быть в будущем");
+        }
+    }
 }
+
