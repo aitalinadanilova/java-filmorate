@@ -6,24 +6,24 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/users")
-@Slf4j
 public class UserController {
+
     private final Map<Integer, User> users = new HashMap<>();
     private int nextId = 1;
 
     @PostMapping
     public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
-        validateUser(user);
+        normalizeUser(user);
+
         user.setId(nextId++);
         users.put(user.getId(), user);
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
@@ -34,7 +34,9 @@ public class UserController {
         if (user.getId() == null || !users.containsKey(user.getId())) {
             throw new NotFoundException("Пользователь с id=" + user.getId() + " не найден");
         }
-        validateUser(user);
+
+        normalizeUser(user);
+
         users.put(user.getId(), user);
         return ResponseEntity.ok(user);
     }
@@ -44,19 +46,9 @@ public class UserController {
         return users.values();
     }
 
-    private void validateUser(User user) {
-        if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
-            throw new ValidationException("Некорректная электронная почта");
-        }
-        if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" ")) {
-            throw new ValidationException("Некорректный логин");
-        }
-        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
+    private void normalizeUser(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
     }
-
 }
