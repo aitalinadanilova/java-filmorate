@@ -5,61 +5,57 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
 
-    private final List<User> users = new ArrayList<>();
+    private final Map<Integer, User> users = new HashMap<>();
     private int nextId = 1;
 
     @PostMapping
-    public ResponseEntity<String> createUser(@Valid @RequestBody User user) {
+    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
         log.info("Попытка создать пользователя: {}", user.getName());
         validateUser(user);
 
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-
         user.setId(nextId++);
-        users.add(user);
+        users.put(user.getId(), user);
 
         log.info("Пользователь {} успешно создан с ID {}", user.getName(), user.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(user.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
 
     @PutMapping
-    public ResponseEntity<String> updateUser(@Valid @RequestBody User user) {
+    public ResponseEntity<User> updateUser(@Valid @RequestBody User user) {
         log.info("Попытка обновить данные пользователя: {}", user.getName());
 
         if (user.getId() == null || user.getId() <= 0) {
-            return ResponseEntity.badRequest().body("Некорректный ID пользователя");
+            throw new ValidationException("Некорректный ID пользователя");
+        }
+
+        if (!users.containsKey(user.getId())) {
+            log.warn("Пользователь с id={} не найден", user.getId());
+            throw new NotFoundException("Пользователь с id=" + user.getId() + " не найден");
         }
 
         validateUser(user);
 
-        for (int i = 0; i < users.size(); i++) {
-            if (users.get(i).getId().equals(user.getId())) {
-                users.set(i, user);
-                log.info("Пользователь с ID {} успешно обновлён", user.getId());
-                return ResponseEntity.ok("Пользователь обновлён: " + user.getName());
-            }
-        }
+        users.put(user.getId(), user);
 
-        log.warn("Пользователь с ID {} не найден", user.getId());
-        return ResponseEntity.notFound().build();
+        log.info("Пользователь обновлён: id={}, email={}", user.getId(), user.getEmail());
+        return ResponseEntity.ok(user);
     }
 
     @GetMapping
-    public List<User> getAllUsers() {
+    public Map<Integer, User> getAllUsers() {
         log.info("Запрошен список пользователей ({} всего)", users.size());
         return users;
     }
@@ -76,4 +72,3 @@ public class UserController {
         }
     }
 }
-
