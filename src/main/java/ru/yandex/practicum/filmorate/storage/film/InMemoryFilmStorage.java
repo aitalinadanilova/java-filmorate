@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class InMemoryFilmStorage implements FilmStorage{
+public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
     private long nextId = 1;
 
