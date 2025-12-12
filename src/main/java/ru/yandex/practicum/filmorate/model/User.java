@@ -1,13 +1,19 @@
 package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
+@NoArgsConstructor
+@AllArgsConstructor
 @Data
 public class User {
-    private Integer id;
+    private Long id;
 
     @NotBlank(message = "Email не может быть пустым")
     @Email(message = "Неправильный формат Email")
@@ -23,4 +29,6 @@ public class User {
     @NotNull(message = "Дата рождения обязательна")
     @Past(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
+
+    private Set<Long> friends = new HashSet<>();
 }
