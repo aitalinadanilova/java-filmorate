@@ -20,4 +20,5 @@ public interface FilmService {
     Film getFilmById(long id);
 
     Collection<Film> getAllFilms();
+
 }

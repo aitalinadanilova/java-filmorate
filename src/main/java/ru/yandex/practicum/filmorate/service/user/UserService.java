@@ -19,4 +19,5 @@ public interface UserService {
 
     List<User> getCommonFriends(long userId, long otherUserId);
 
+    List<User> getFriends(long userId);
 }
