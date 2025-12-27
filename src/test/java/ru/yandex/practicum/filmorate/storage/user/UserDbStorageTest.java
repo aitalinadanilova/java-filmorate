@@ -62,7 +62,6 @@ class UserDbStorageTest {
         User user = UserMapper.toModel(dto);
         User createdUser = userDbStorage.createUser(user);
 
-        // Обновляем данные
         dto.setId(createdUser.getId());
         dto.setEmail("updated@example.com");
         dto.setLogin("updateduser");

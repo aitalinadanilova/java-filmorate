@@ -32,7 +32,7 @@ class FilmDbStorageTest {
         dto.setDescription("Description");
         dto.setReleaseDate(LocalDate.of(2023, 1, 1));
         dto.setDuration(120);
-        dto.setMpaId(1); // G
+        dto.setMpaId(1);
         dto.setGenreIds(Set.of(1L));
 
         Film film = FilmMapper.toModel(dto);
@@ -55,18 +55,17 @@ class FilmDbStorageTest {
         dto.setDescription("Initial Description");
         dto.setReleaseDate(LocalDate.of(2023, 1, 1));
         dto.setDuration(100);
-        dto.setMpaId(2); // PG
+        dto.setMpaId(2);
         dto.setGenreIds(Set.of(1L));
 
         Film film = FilmMapper.toModel(dto);
         filmDbStorage.createFilm(film);
 
-        // Обновляем данные
         dto.setId(film.getId());
         dto.setName("Updated Film");
         dto.setDescription("Updated Description");
         dto.setDuration(150);
-        dto.setMpaId(3); // PG_13
+        dto.setMpaId(3);
         dto.setGenreIds(Set.of(2L));
 
         Film updatedFilm = FilmMapper.toModel(dto);
@@ -116,7 +115,7 @@ class FilmDbStorageTest {
         dto.setDescription("To be deleted");
         dto.setReleaseDate(LocalDate.of(2023, 1, 1));
         dto.setDuration(100);
-        dto.setMpaId(4); // R
+        dto.setMpaId(4);
 
         Film film = FilmMapper.toModel(dto);
         filmDbStorage.createFilm(film);

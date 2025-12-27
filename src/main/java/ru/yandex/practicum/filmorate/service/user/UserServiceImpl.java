@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service.user;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -21,10 +22,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User createUser(User user) {
+        boolean emailExists = userStorage.getAllUsers().stream()
+                .anyMatch(u -> u.getEmail().equalsIgnoreCase(user.getEmail()));
+        if (emailExists) {
+            throw new ValidationException("Пользователь с таким email уже существует");
+        }
+
+        boolean loginExists = userStorage.getAllUsers().stream()
+                .anyMatch(u -> u.getLogin().equalsIgnoreCase(user.getLogin()));
+        if (loginExists) {
+            throw new ValidationException("Пользователь с таким login уже существует");
+        }
+
         userStorage.createUser(user);
         return user;
     }
-
     @Override
     public User updateUser(User user) {
         userStorage.updateUser(user);
