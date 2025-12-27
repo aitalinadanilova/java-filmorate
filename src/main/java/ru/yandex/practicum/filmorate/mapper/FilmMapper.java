@@ -4,7 +4,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 
 import java.util.HashSet;
-import java.util.Set;
+
 public class FilmMapper {
 
     public static Film toModel(FilmDto dto) {
