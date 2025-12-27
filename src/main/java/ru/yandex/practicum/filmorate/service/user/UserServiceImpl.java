@@ -19,7 +19,6 @@ public class UserServiceImpl implements UserService {
         this.userStorage = userStorage;
     }
 
-
     @Override
     public User createUser(User user) {
         userStorage.createUser(user);
