@@ -12,9 +12,10 @@ public class InMemoryUserStorage implements UserStorage {
     private long nextId = 1;
 
     @Override
-    public void createUser(User user) {
+    public User createUser(User user) {
         user.setId(nextId++);
         users.put(user.getId(), user);
+        return user;
     }
 
     @Override
