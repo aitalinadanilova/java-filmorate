@@ -27,20 +27,20 @@ class UserDbStorageTest {
     }
 
     @Test
-    void testCreateAndGetUser() {
-        User user = new User();
-        user.setEmail("test@example.com");
-        user.setLogin("testuser");
-        user.setName("Test User");
-        user.setBirthday(LocalDate.of(2000, 1, 1));
+    void testCreateAndRetrieveUser() {
+        User userToCreate = new User();
+        userToCreate.setEmail("test@example.com");
+        userToCreate.setLogin("testuser");
+        userToCreate.setName("Test User");
+        userToCreate.setBirthday(LocalDate.of(2000, 1, 1));
 
-        User created = userDbStorage.createUser(user);
+        User createdUser = userDbStorage.createUser(userToCreate);
 
-        assertThat(created.getId()).isNotNull();
+        assertThat(createdUser.getId()).isNotNull();
 
-        User fromDb = userDbStorage.getUserById(created.getId());
+        User userFromDb = userDbStorage.getUserById(createdUser.getId());
 
-        assertThat(fromDb)
+        assertThat(userFromDb)
                 .isNotNull()
                 .hasFieldOrPropertyWithValue("email", "test@example.com")
                 .hasFieldOrPropertyWithValue("login", "testuser")
@@ -50,25 +50,25 @@ class UserDbStorageTest {
 
     @Test
     void testUpdateUser() {
-        User user = new User();
-        user.setEmail("initial@example.com");
-        user.setLogin("initialuser");
-        user.setName("Initial Name");
-        user.setBirthday(LocalDate.of(1995, 5, 5));
+        User userToCreate = new User();
+        userToCreate.setEmail("initial@example.com");
+        userToCreate.setLogin("initialuser");
+        userToCreate.setName("Initial Name");
+        userToCreate.setBirthday(LocalDate.of(1995, 5, 5));
 
-        User created = userDbStorage.createUser(user);
+        User createdUser = userDbStorage.createUser(userToCreate);
 
-        // Обновляем пользователя
-        created.setEmail("updated@example.com");
-        created.setLogin("updateduser");
-        created.setName("Updated Name");
-        created.setBirthday(LocalDate.of(1999, 9, 9));
+        // Обновляем данные пользователя
+        createdUser.setEmail("updated@example.com");
+        createdUser.setLogin("updateduser");
+        createdUser.setName("Updated Name");
+        createdUser.setBirthday(LocalDate.of(1999, 9, 9));
 
-        userDbStorage.updateUser(created);
+        userDbStorage.updateUser(createdUser);
 
-        User updated = userDbStorage.getUserById(created.getId());
+        User updatedUser = userDbStorage.getUserById(createdUser.getId());
 
-        assertThat(updated)
+        assertThat(updatedUser)
                 .hasFieldOrPropertyWithValue("email", "updated@example.com")
                 .hasFieldOrPropertyWithValue("login", "updateduser")
                 .hasFieldOrPropertyWithValue("name", "Updated Name")
@@ -77,43 +77,43 @@ class UserDbStorageTest {
 
     @Test
     void testDeleteUser() {
-        User user = new User();
-        user.setEmail("delete@example.com");
-        user.setLogin("deleteuser");
-        user.setName("Delete Me");
-        user.setBirthday(LocalDate.of(1990, 1, 1));
+        User userToCreate = new User();
+        userToCreate.setEmail("delete@example.com");
+        userToCreate.setLogin("deleteuser");
+        userToCreate.setName("Delete Me");
+        userToCreate.setBirthday(LocalDate.of(1990, 1, 1));
 
-        User created = userDbStorage.createUser(user);
-        Long id = created.getId();
+        User createdUser = userDbStorage.createUser(userToCreate);
+        Long userId = createdUser.getId();
 
-        userDbStorage.deleteUser(created);
+        userDbStorage.deleteUser(createdUser);
 
-        // Проверяем, что пользователь удален
-        assertThatThrownBy(() -> userDbStorage.getUserById(id))
+        // Проверяем, что пользователь удалён
+        assertThatThrownBy(() -> userDbStorage.getUserById(userId))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("User not found with id");
     }
 
     @Test
-    void testGetAllUsers() {
-        // Создаем двух пользователей
-        User user1 = new User();
-        user1.setEmail("user1@example.com");
-        user1.setLogin("user1");
-        user1.setName("User One");
-        user1.setBirthday(LocalDate.of(1990, 1, 1));
-        userDbStorage.createUser(user1);
+    void testRetrieveAllUsers() {
+        // Создаём двух пользователей
+        User firstUser = new User();
+        firstUser.setEmail("user1@example.com");
+        firstUser.setLogin("user1");
+        firstUser.setName("User One");
+        firstUser.setBirthday(LocalDate.of(1990, 1, 1));
+        userDbStorage.createUser(firstUser);
 
-        User user2 = new User();
-        user2.setEmail("user2@example.com");
-        user2.setLogin("user2");
-        user2.setName("User Two");
-        user2.setBirthday(LocalDate.of(1992, 2, 2));
-        userDbStorage.createUser(user2);
+        User secondUser = new User();
+        secondUser.setEmail("user2@example.com");
+        secondUser.setLogin("user2");
+        secondUser.setName("User Two");
+        secondUser.setBirthday(LocalDate.of(1992, 2, 2));
+        userDbStorage.createUser(secondUser);
 
-        List<User> users = userDbStorage.getAllUsers();
+        List<User> allUsers = userDbStorage.getAllUsers();
 
-        assertThat(users)
+        assertThat(allUsers)
                 .hasSizeGreaterThanOrEqualTo(2)
                 .extracting("email")
                 .contains("user1@example.com", "user2@example.com");

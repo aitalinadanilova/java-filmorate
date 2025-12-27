@@ -8,6 +8,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -68,31 +69,39 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Film getFilmById(long filmId) {
         String sql = "SELECT * FROM films WHERE id = ?";
-        Film film = jdbcTemplate.query(sql, (resultSet, rowNum) -> {
-            Film filmFromDb = new Film();
-            filmFromDb.setId(resultSet.getLong("id"));
-            filmFromDb.setName(resultSet.getString("name"));
-            filmFromDb.setDescription(resultSet.getString("description"));
-            filmFromDb.setReleaseDate(resultSet.getDate("release_date").toLocalDate());
-            filmFromDb.setDuration(resultSet.getInt("duration"));
-            return filmFromDb;
+        Film filmFromDb = jdbcTemplate.query(sql, (result, rowNum) -> {
+            Film film = new Film();
+            film.setId(result.getLong("id"));
+            film.setName(result.getString("name"));
+            film.setDescription(result.getString("description"));
+            film.setReleaseDate(result.getDate("release_date").toLocalDate());
+            film.setDuration(result.getInt("duration"));
+            int mpaId = result.getInt("mpa_id");
+            if (!result.wasNull()) {
+                film.setMpa(MpaRating.fromId(mpaId));
+            }
+            return film;
         }, filmId).stream().findFirst().orElseThrow(() -> new RuntimeException("Film not found with id: " + filmId));
 
-        film.setGenres(getFilmGenres(filmId));
-        return film;
+        filmFromDb.setGenres(getFilmGenres(filmId));
+        return filmFromDb;
     }
 
     @Override
     public Collection<Film> getAllFilms() {
         String sql = "SELECT * FROM films";
-        List<Film> films = jdbcTemplate.query(sql, (resultSet, rowNum) -> {
-            Film filmFromDb = new Film();
-            filmFromDb.setId(resultSet.getLong("id"));
-            filmFromDb.setName(resultSet.getString("name"));
-            filmFromDb.setDescription(resultSet.getString("description"));
-            filmFromDb.setReleaseDate(resultSet.getDate("release_date").toLocalDate());
-            filmFromDb.setDuration(resultSet.getInt("duration"));
-            return filmFromDb;
+        List<Film> films = jdbcTemplate.query(sql, (result, rowNum) -> {
+            Film film = new Film();
+            film.setId(result.getLong("id"));
+            film.setName(result.getString("name"));
+            film.setDescription(result.getString("description"));
+            film.setReleaseDate(result.getDate("release_date").toLocalDate());
+            film.setDuration(result.getInt("duration"));
+            int mpaId = result.getInt("mpa_id");
+            if (!result.wasNull()) {
+                film.setMpa(MpaRating.fromId(mpaId));
+            }
+            return film;
         });
 
         for (Film film : films) {
@@ -102,7 +111,9 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private void saveFilmGenres(Film film) {
-        if (film.getGenres() == null || film.getGenres().isEmpty()) return;
+        if (film.getGenres() == null || film.getGenres().isEmpty()) {
+            return;
+        }
         String sql = "INSERT INTO film_genres (film_id, genre_id) VALUES (?, ?)";
         for (Genre genre : film.getGenres()) {
             jdbcTemplate.update(sql, film.getId(), genre.getId());
@@ -118,9 +129,12 @@ public class FilmDbStorage implements FilmStorage {
         String sql = "SELECT g.id, g.name FROM genres g " +
                 "JOIN film_genres fg ON g.id = fg.genre_id " +
                 "WHERE fg.film_id = ?";
-        return new HashSet<>(jdbcTemplate.query(sql, (resultSet, rowNum) -> new Genre(
-                resultSet.getLong("id"),
-                resultSet.getString("name")
-        ), filmId));
+        List<Genre> genres = jdbcTemplate.query(sql, (result, rowNum) -> {
+            Genre genre = new Genre();
+            genre.setId(result.getLong("id"));
+            genre.setName(result.getString("name"));
+            return genre;
+        }, filmId);
+        return new HashSet<>(genres);
     }
 }
