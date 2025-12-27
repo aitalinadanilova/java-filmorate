@@ -37,6 +37,7 @@ public class UserServiceImpl implements UserService {
         userStorage.createUser(user);
         return user;
     }
+
     @Override
     public User updateUser(User user) {
         userStorage.updateUser(user);
