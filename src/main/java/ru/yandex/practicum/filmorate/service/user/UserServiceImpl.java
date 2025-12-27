@@ -40,12 +40,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updateUser(User user) {
+        getUserById(user.getId());
         userStorage.updateUser(user);
         return user;
     }
 
     @Override
-        public User getUserById(long id) {
+    public User getUserById(long id) {
         User user = userStorage.getUserById(id);
         if (user == null) {
             throw new NotFoundException("Пользователь с id=" + id + " не найден");

@@ -22,10 +22,11 @@ public class MpaDbStorage implements MpaStorage {
 
     public MpaRating getById(long id) {
         String sql = "SELECT id FROM mpa WHERE id = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) -> MpaRating.fromId(rs.getInt("id")), id)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("MPA not found id=" + id));
+        List<MpaRating> list = jdbcTemplate.query(sql,
+                (rs, rowNum) -> MpaRating.fromId(rs.getInt("id")),
+                id);
+
+        return list.isEmpty() ? null : list.get(0);
     }
 
 }

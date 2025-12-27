@@ -25,11 +25,11 @@ public class GenreDbStorage implements GenreStorage {
     @Override
     public Genre getGenreById(long id) {
         String sql = "SELECT id, name FROM genres WHERE id = ?";
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
-                        new Genre(rs.getLong("id"), rs.getString("name")), id)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Genre not found with id=" + id));
+        List<Genre> genres = jdbcTemplate.query(sql,
+                (rs, rowNum) -> new Genre(rs.getLong("id"), rs.getString("name")),
+                id);
+
+        return genres.isEmpty() ? null : genres.get(0);
     }
 
 }

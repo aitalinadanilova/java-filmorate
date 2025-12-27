@@ -1,16 +1,16 @@
 package ru.yandex.practicum.filmorate.mapper;
 
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 
-import java.util.stream.Collectors;
-
+import java.util.HashSet;
+import java.util.Set;
 public class FilmMapper {
 
     public static Film toModel(FilmDto dto) {
-        if (dto == null) return null;
+        if (dto == null) {
+            return null;
+        }
 
         Film film = new Film();
         film.setId(dto.getId());
@@ -19,21 +19,21 @@ public class FilmMapper {
         film.setReleaseDate(dto.getReleaseDate());
         film.setDuration(dto.getDuration());
 
-        if (dto.getGenreIds() != null) {
-            film.setGenres(dto.getGenreIds().stream()
-                    .map(id -> new Genre(id, null))
-                    .collect(Collectors.toSet()));
-        }
+        film.setMpa(dto.getMpa());
 
-        if (dto.getMpaId() != null) {
-            film.setMpa(MpaRating.fromId(dto.getMpaId()));
-        }
+        film.setGenres(
+                dto.getGenres() != null
+                        ? new HashSet<>(dto.getGenres())
+                        : new HashSet<>()
+        );
 
         return film;
     }
 
     public static FilmDto toDto(Film film) {
-        if (film == null) return null;
+        if (film == null) {
+            return null;
+        }
 
         FilmDto dto = new FilmDto();
         dto.setId(film.getId());
@@ -42,21 +42,13 @@ public class FilmMapper {
         dto.setReleaseDate(film.getReleaseDate());
         dto.setDuration(film.getDuration());
 
-        if (film.getGenres() != null) {
-            dto.setGenreIds(film.getGenres().stream()
-                    .map(Genre::getId)
-                    .collect(Collectors.toSet()));
-        }
-
-        if (film.getMpa() != null) {
-            dto.setMpaId(film.getMpa().getId());
-        }
-
-        if (film.getLikes() != null) {
-            dto.setLikes(film.getLikes());
-        }
+        dto.setMpa(film.getMpa());
+        dto.setGenres(
+                dto.getGenres() != null
+                        ? new HashSet<>(dto.getGenres())
+                        : new HashSet<>()
+        );
 
         return dto;
     }
-
 }

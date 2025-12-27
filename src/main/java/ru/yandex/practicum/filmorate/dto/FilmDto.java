@@ -2,6 +2,8 @@ package ru.yandex.practicum.filmorate.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -25,10 +27,9 @@ public class FilmDto {
     @Positive(message = "Продолжительность должна быть положительной")
     private Integer duration;
 
-    private Set<Long> likes;
+    private Set<Genre> genres;
 
-    private Set<Long> genreIds;
-
-    private Integer mpaId;
+    @NotNull(message = "MPA обязателен")
+    private MpaRating mpa;
 }
 

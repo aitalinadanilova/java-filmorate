@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.genre.GenreService;
+import ru.yandex.practicum.filmorate.service.mpa.MpaService;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.service.user.UserService;
 
@@ -18,23 +20,52 @@ public class FilmServiceImpl implements FilmService {
 
     private final FilmStorage filmStorage;
     private final UserService userService;
+    private final GenreService genreService;
+    private final MpaService mpaService;
 
     public FilmServiceImpl(@Qualifier("filmDbStorage") FilmStorage filmStorage,
-                           UserService userService) {
+                           UserService userService,
+                           GenreService genreService,
+                           MpaService mpaService) {
         this.filmStorage = filmStorage;
         this.userService = userService;
+        this.genreService = genreService;
+        this.mpaService = mpaService;
     }
 
     @Override
     public Film createFilm(FilmDto filmDto) {
         Film film = FilmMapper.toModel(filmDto);
+
+        mpaService.getMpaById(film.getMpa().getId());
+
+        if (film.getGenres() != null) {
+            film.setGenres(
+                    film.getGenres().stream()
+                            .map(g -> genreService.getGenreById(g.getId()))
+                            .collect(Collectors.toSet())
+            );
+        }
+
         filmStorage.createFilm(film);
         return film;
     }
 
     @Override
     public Film updateFilm(FilmDto filmDto) {
+        getFilmModelById(filmDto.getId());
         Film film = FilmMapper.toModel(filmDto);
+
+        mpaService.getMpaById(film.getMpa().getId());
+
+        if (film.getGenres() != null) {
+            film.setGenres(
+                    film.getGenres().stream()
+                            .map(g -> genreService.getGenreById(g.getId()))
+                            .collect(Collectors.toSet())
+            );
+        }
+
         filmStorage.updateFilm(film);
         return film;
     }
