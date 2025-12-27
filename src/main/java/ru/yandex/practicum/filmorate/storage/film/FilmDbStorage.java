@@ -1,28 +1,26 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.RequiredArgsConstructor;
-import java.sql.Date;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Qualifier;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.film.mapper.FilmMapper;
 
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.*;
 
 @Component
-@Qualifier("FilmDbStorage")
+@Qualifier("filmDbStorage")
 @RequiredArgsConstructor
 public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
-    private final FilmMapper filmMapper = new FilmMapper();
 
     @Override
     public void createFilm(Film film) {
@@ -30,24 +28,22 @@ public class FilmDbStorage implements FilmStorage {
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, film.getName());
-            ps.setString(2, film.getDescription());
-            ps.setDate(3, Date.valueOf(film.getReleaseDate()));
-            ps.setInt(4, film.getDuration());
+            PreparedStatement preparedStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            preparedStatement.setString(1, film.getName());
+            preparedStatement.setString(2, film.getDescription());
+            preparedStatement.setDate(3, Date.valueOf(film.getReleaseDate()));
+            preparedStatement.setInt(4, film.getDuration());
             if (film.getMpa() != null) {
-                ps.setInt(5, film.getMpa().getId());
+                preparedStatement.setInt(5, film.getMpa().getId());
             } else {
-                ps.setNull(5, Types.INTEGER);
+                preparedStatement.setNull(5, Types.INTEGER);
             }
-            return ps;
+            return preparedStatement;
         }, keyHolder);
 
         film.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
-
         saveFilmGenres(film);
     }
-
 
     @Override
     public void updateFilm(Film film) {
@@ -55,7 +51,7 @@ public class FilmDbStorage implements FilmStorage {
         jdbcTemplate.update(sql,
                 film.getName(),
                 film.getDescription(),
-                film.getReleaseDate(),
+                Date.valueOf(film.getReleaseDate()),
                 film.getDuration(),
                 film.getMpa() != null ? film.getMpa().getId() : null,
                 film.getId()
@@ -70,21 +66,35 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Film getFilmById(long id) {
+    public Film getFilmById(long filmId) {
         String sql = "SELECT * FROM films WHERE id = ?";
-        Film film = jdbcTemplate.query(sql, filmMapper, id)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Film not found with id: " + id));
+        Film film = jdbcTemplate.query(sql, (resultSet, rowNum) -> {
+            Film filmFromDb = new Film();
+            filmFromDb.setId(resultSet.getLong("id"));
+            filmFromDb.setName(resultSet.getString("name"));
+            filmFromDb.setDescription(resultSet.getString("description"));
+            filmFromDb.setReleaseDate(resultSet.getDate("release_date").toLocalDate());
+            filmFromDb.setDuration(resultSet.getInt("duration"));
+            return filmFromDb;
+        }, filmId).stream().findFirst().orElseThrow(() -> new RuntimeException("Film not found with id: " + filmId));
 
-        film.setGenres(getFilmGenres(id));
+        film.setGenres(getFilmGenres(filmId));
         return film;
     }
 
     @Override
     public Collection<Film> getAllFilms() {
         String sql = "SELECT * FROM films";
-        List<Film> films = jdbcTemplate.query(sql, filmMapper);
+        List<Film> films = jdbcTemplate.query(sql, (resultSet, rowNum) -> {
+            Film filmFromDb = new Film();
+            filmFromDb.setId(resultSet.getLong("id"));
+            filmFromDb.setName(resultSet.getString("name"));
+            filmFromDb.setDescription(resultSet.getString("description"));
+            filmFromDb.setReleaseDate(resultSet.getDate("release_date").toLocalDate());
+            filmFromDb.setDuration(resultSet.getInt("duration"));
+            return filmFromDb;
+        });
+
         for (Film film : films) {
             film.setGenres(getFilmGenres(film.getId()));
         }
@@ -108,9 +118,9 @@ public class FilmDbStorage implements FilmStorage {
         String sql = "SELECT g.id, g.name FROM genres g " +
                 "JOIN film_genres fg ON g.id = fg.genre_id " +
                 "WHERE fg.film_id = ?";
-        return new HashSet<>(jdbcTemplate.query(sql, (rs, rowNum) -> new Genre(
-                rs.getLong("id"),
-                rs.getString("name")
+        return new HashSet<>(jdbcTemplate.query(sql, (resultSet, rowNum) -> new Genre(
+                resultSet.getLong("id"),
+                resultSet.getString("name")
         ), filmId));
     }
 }

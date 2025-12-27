@@ -2,6 +2,8 @@ package ru.yandex.practicum.filmorate.service.film;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.service.user.UserService;
@@ -24,30 +26,30 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public Film createFilm(Film film) {
+    public Film createFilm(FilmDto filmDto) {
+        Film film = FilmMapper.toModel(filmDto);
         filmStorage.createFilm(film);
         return film;
     }
 
     @Override
-    public Film updateFilm(Film film) {
+    public Film updateFilm(FilmDto filmDto) {
+        Film film = FilmMapper.toModel(filmDto);
         filmStorage.updateFilm(film);
         return film;
     }
 
     @Override
     public void addLike(long filmId, long userId) {
-        Film film = getFilmById(filmId);
-
+        Film film = getFilmModelById(filmId);
         userService.getUserById(userId);
-
         film.getLikes().add(userId);
         filmStorage.updateFilm(film);
     }
 
     @Override
     public void removeLike(long filmId, long userId) {
-        Film film = getFilmById(filmId);
+        Film film = getFilmModelById(filmId);
         userService.getUserById(userId);
         film.getLikes().remove(userId);
         filmStorage.updateFilm(film);
@@ -63,12 +65,16 @@ public class FilmServiceImpl implements FilmService {
 
     @Override
     public Film getFilmById(long id) {
-        return filmStorage.getFilmById(id);
+        return getFilmModelById(id);
     }
 
     @Override
     public Collection<Film> getAllFilms() {
         return filmStorage.getAllFilms();
+    }
+
+    private Film getFilmModelById(long id) {
+        return filmStorage.getFilmById(id);
     }
 
 }

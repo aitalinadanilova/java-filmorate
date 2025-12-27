@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service.film;
 
+import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
@@ -7,9 +8,9 @@ import java.util.List;
 
 public interface FilmService {
 
-    Film createFilm(Film film);
+    Film createFilm(FilmDto filmDto);
 
-    Film updateFilm(Film film);
+    Film updateFilm(FilmDto filmDto);
 
     void addLike(long filmId, long userId);
 

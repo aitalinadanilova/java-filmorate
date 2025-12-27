@@ -1,26 +1,26 @@
 package ru.yandex.practicum.filmorate.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+import java.util.Arrays;
+
+@Getter
+@AllArgsConstructor
 public enum MpaRating {
-    G(1),
-    PG(2),
-    PG_13(3),
-    R(4),
-    NC_17(5);
+    G(1, "G"),
+    PG(2, "PG"),
+    PG_13(3, "PG-13"),
+    R(4, "R"),
+    NC_17(5, "NC-17");
 
     private final int id;
-
-    MpaRating(int id) {
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
+    private final String name;
 
     public static MpaRating fromId(int id) {
-        for (MpaRating rating : values()) {
-            if (rating.id == id) return rating;
-        }
-        throw new IllegalArgumentException("Unknown MPA id: " + id);
+        return Arrays.stream(MpaRating.values())
+                .filter(r -> r.getId() == id)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("MPA rating not found with id: " + id));
     }
 }

@@ -3,36 +3,45 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.user.UserService;
 
 import java.util.List;
 
-@RequiredArgsConstructor
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
     @PostMapping
-    public User createUser(@Valid @RequestBody User user) {
-        return userService.createUser(user);
+    public UserDto createUser(@Valid @RequestBody UserDto userDto) {
+        User user = UserMapper.toModel(userDto);
+        User saved = userService.createUser(user);
+        return UserMapper.toDto(saved);
     }
 
     @PutMapping
-    public User updateUser(@Valid @RequestBody User user) {
-        return userService.updateUser(user);
+    public UserDto updateUser(@Valid @RequestBody UserDto userDto) {
+        User user = UserMapper.toModel(userDto);
+        User updated = userService.updateUser(user);
+        return UserMapper.toDto(updated);
     }
 
     @GetMapping("/{id}")
-    public User getUser(@PathVariable long id) {
-        return userService.getUserById(id);
+    public UserDto getUser(@PathVariable long id) {
+        User user = userService.getUserById(id);
+        return UserMapper.toDto(user);
     }
 
     @GetMapping
-    public List<User> getAllUsers() {
-        return userService.getAllUsers();
+    public List<UserDto> getAllUsers() {
+        return userService.getAllUsers().stream()
+                .map(UserMapper::toDto)
+                .toList();
     }
 
     @PutMapping("/{id}/friends/{friendId}")
@@ -46,12 +55,16 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends")
-    public List<User> getFriends(@PathVariable long id) {
-        return userService.getFriends(id);
+    public List<UserDto> getFriends(@PathVariable long id) {
+        return userService.getFriends(id).stream()
+                .map(UserMapper::toDto)
+                .toList();
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public List<User> getCommonFriends(@PathVariable long id, @PathVariable long otherId) {
-        return userService.getCommonFriends(id, otherId);
+    public List<UserDto> getCommonFriends(@PathVariable long id, @PathVariable long otherId) {
+        return userService.getCommonFriends(id, otherId).stream()
+                .map(UserMapper::toDto)
+                .toList();
     }
 }
