@@ -11,7 +11,7 @@ import java.util.List;
 @Component
 @Qualifier("mpaDbStorage")
 @RequiredArgsConstructor
-public class MpaDbStorage implements MpaStorage{
+public class MpaDbStorage implements MpaStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
