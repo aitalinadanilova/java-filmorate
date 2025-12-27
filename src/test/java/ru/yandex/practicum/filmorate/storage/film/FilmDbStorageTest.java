@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Import;
 import ru.yandex.practicum.filmorate.dto.FilmDto;
 import ru.yandex.practicum.filmorate.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -32,8 +34,8 @@ class FilmDbStorageTest {
         dto.setDescription("Description");
         dto.setReleaseDate(LocalDate.of(2023, 1, 1));
         dto.setDuration(120);
-        dto.setMpaId(1);
-        dto.setGenreIds(Set.of(1L));
+        dto.setMpa(MpaRating.G);
+        dto.setGenres(Set.of(new Genre(1L, "Комедия")));
 
         Film film = FilmMapper.toModel(dto);
         filmDbStorage.createFilm(film);
@@ -43,8 +45,8 @@ class FilmDbStorageTest {
         Film fromDb = filmDbStorage.getFilmById(film.getId());
         assertThat(fromDb.getName()).isEqualTo("Test Film");
         assertThat(fromDb.getDuration()).isEqualTo(120);
-        assertThat(fromDb.getMpa().getId()).isEqualTo(1);
-        assertThat(fromDb.getGenres().stream().map(g -> g.getId()).collect(Collectors.toSet()))
+        assertThat(fromDb.getMpa()).isEqualTo(MpaRating.G);
+        assertThat(fromDb.getGenres().stream().map(Genre::getId).collect(Collectors.toSet()))
                 .containsExactlyInAnyOrder(1L);
     }
 
@@ -55,8 +57,8 @@ class FilmDbStorageTest {
         dto.setDescription("Initial Description");
         dto.setReleaseDate(LocalDate.of(2023, 1, 1));
         dto.setDuration(100);
-        dto.setMpaId(2);
-        dto.setGenreIds(Set.of(1L));
+        dto.setMpa(MpaRating.PG);
+        dto.setGenres(Set.of(new Genre(1L, "Комедия")));
 
         Film film = FilmMapper.toModel(dto);
         filmDbStorage.createFilm(film);
@@ -65,8 +67,8 @@ class FilmDbStorageTest {
         dto.setName("Updated Film");
         dto.setDescription("Updated Description");
         dto.setDuration(150);
-        dto.setMpaId(3);
-        dto.setGenreIds(Set.of(2L));
+        dto.setMpa(MpaRating.R);
+        dto.setGenres(Set.of(new Genre(2L, "Драма")));
 
         Film updatedFilm = FilmMapper.toModel(dto);
         filmDbStorage.updateFilm(updatedFilm);
@@ -75,8 +77,8 @@ class FilmDbStorageTest {
         assertThat(fromDb.getName()).isEqualTo("Updated Film");
         assertThat(fromDb.getDescription()).isEqualTo("Updated Description");
         assertThat(fromDb.getDuration()).isEqualTo(150);
-        assertThat(fromDb.getMpa().getId()).isEqualTo(3);
-        assertThat(fromDb.getGenres().stream().map(g -> g.getId()).collect(Collectors.toSet()))
+        assertThat(fromDb.getMpa()).isEqualTo(MpaRating.R);
+        assertThat(fromDb.getGenres().stream().map(Genre::getId).collect(Collectors.toSet()))
                 .containsExactlyInAnyOrder(2L);
     }
 
@@ -87,14 +89,16 @@ class FilmDbStorageTest {
         dto1.setDescription("Desc 1");
         dto1.setReleaseDate(LocalDate.of(2023, 1, 1));
         dto1.setDuration(90);
-        dto1.setMpaId(1);
+        dto1.setMpa(MpaRating.G);
+        dto1.setGenres(Set.of(new Genre(1L, "Комедия")));
 
         FilmDto dto2 = new FilmDto();
         dto2.setName("Film 2");
         dto2.setDescription("Desc 2");
         dto2.setReleaseDate(LocalDate.of(2023, 2, 1));
         dto2.setDuration(110);
-        dto2.setMpaId(2);
+        dto2.setMpa(MpaRating.PG);
+        dto2.setGenres(Set.of(new Genre(2L, "Драма")));
 
         Film film1 = FilmMapper.toModel(dto1);
         Film film2 = FilmMapper.toModel(dto2);
@@ -115,7 +119,8 @@ class FilmDbStorageTest {
         dto.setDescription("To be deleted");
         dto.setReleaseDate(LocalDate.of(2023, 1, 1));
         dto.setDuration(100);
-        dto.setMpaId(4);
+        dto.setMpa(MpaRating.PG_13);
+        dto.setGenres(Set.of(new Genre(3L, "Мультфильм")));
 
         Film film = FilmMapper.toModel(dto);
         filmDbStorage.createFilm(film);

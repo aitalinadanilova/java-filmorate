@@ -13,7 +13,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 @JdbcTest
 @AutoConfigureTestDatabase
@@ -93,12 +92,9 @@ class UserDbStorageTest {
         Long userId = createdUser.getId();
 
         userDbStorage.deleteUser(createdUser);
-
-        assertThatThrownBy(() -> userDbStorage.getUserById(userId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("User not found with id");
+        User fromDb = userDbStorage.getUserById(userId);
+        assertThat(fromDb).isNull();
     }
-
     @Test
     void testRetrieveAllUsers() {
         UserDto dto1 = new UserDto();
