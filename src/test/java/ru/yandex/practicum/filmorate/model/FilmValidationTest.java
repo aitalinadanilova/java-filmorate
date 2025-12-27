@@ -30,7 +30,8 @@ class FilmValidationTest {
         film.setDescription("Космическая драма");
         film.setReleaseDate(LocalDate.of(2014, 11, 7));
         film.setDuration(169);
-
+        film.setMpa(MpaRating.G);
+        film.setGenres(Set.of());
         Set<ConstraintViolation<FilmDto>> violations = validator.validate(film);
         assertTrue(violations.isEmpty(), "Корректный фильм не должен вызывать ошибок");
     }
