@@ -2,7 +2,9 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 
@@ -22,6 +24,10 @@ public class GenreController {
 
     @GetMapping("/{id}")
     public Genre getGenreById(@PathVariable long id) {
-        return genreStorage.getGenreById(id);
+        Genre genre = genreStorage.getGenreById(id);
+        if (genre == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Genre not found");
+        }
+        return genre;
     }
 }

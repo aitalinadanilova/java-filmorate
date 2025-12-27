@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import ru.yandex.practicum.filmorate.dto.UserDto;
 import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
@@ -59,6 +60,10 @@ public class UserController {
 
     @GetMapping("/{id}/friends")
     public List<UserDto> getFriends(@PathVariable long id) {
+        List<User> friends = userService.getFriends(id);
+        if (friends == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
         return userService.getFriends(id).stream()
                 .map(UserMapper::toDto)
                 .toList();
