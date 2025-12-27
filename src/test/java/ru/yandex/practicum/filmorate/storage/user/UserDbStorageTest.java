@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.mapper.UserMapper;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
@@ -28,19 +30,20 @@ class UserDbStorageTest {
 
     @Test
     void testCreateAndRetrieveUser() {
-        User userToCreate = new User();
-        userToCreate.setEmail("test@example.com");
-        userToCreate.setLogin("testuser");
-        userToCreate.setName("Test User");
-        userToCreate.setBirthday(LocalDate.of(2000, 1, 1));
+        UserDto dto = new UserDto();
+        dto.setEmail("test@example.com");
+        dto.setLogin("testuser");
+        dto.setName("Test User");
+        dto.setBirthday(LocalDate.of(2000, 1, 1));
 
-        User createdUser = userDbStorage.createUser(userToCreate);
+        User user = UserMapper.toModel(dto);
+        User createdUser = userDbStorage.createUser(user);
 
         assertThat(createdUser.getId()).isNotNull();
 
-        User userFromDb = userDbStorage.getUserById(createdUser.getId());
+        User fromDb = userDbStorage.getUserById(createdUser.getId());
 
-        assertThat(userFromDb)
+        assertThat(fromDb)
                 .isNotNull()
                 .hasFieldOrPropertyWithValue("email", "test@example.com")
                 .hasFieldOrPropertyWithValue("login", "testuser")
@@ -50,25 +53,28 @@ class UserDbStorageTest {
 
     @Test
     void testUpdateUser() {
-        User userToCreate = new User();
-        userToCreate.setEmail("initial@example.com");
-        userToCreate.setLogin("initialuser");
-        userToCreate.setName("Initial Name");
-        userToCreate.setBirthday(LocalDate.of(1995, 5, 5));
+        UserDto dto = new UserDto();
+        dto.setEmail("initial@example.com");
+        dto.setLogin("initialuser");
+        dto.setName("Initial Name");
+        dto.setBirthday(LocalDate.of(1995, 5, 5));
 
-        User createdUser = userDbStorage.createUser(userToCreate);
+        User user = UserMapper.toModel(dto);
+        User createdUser = userDbStorage.createUser(user);
 
-        // Обновляем данные пользователя
-        createdUser.setEmail("updated@example.com");
-        createdUser.setLogin("updateduser");
-        createdUser.setName("Updated Name");
-        createdUser.setBirthday(LocalDate.of(1999, 9, 9));
+        // Обновляем данные
+        dto.setId(createdUser.getId());
+        dto.setEmail("updated@example.com");
+        dto.setLogin("updateduser");
+        dto.setName("Updated Name");
+        dto.setBirthday(LocalDate.of(1999, 9, 9));
 
-        userDbStorage.updateUser(createdUser);
+        User updatedUserModel = UserMapper.toModel(dto);
+        userDbStorage.updateUser(updatedUserModel);
 
-        User updatedUser = userDbStorage.getUserById(createdUser.getId());
+        User fromDb = userDbStorage.getUserById(createdUser.getId());
 
-        assertThat(updatedUser)
+        assertThat(fromDb)
                 .hasFieldOrPropertyWithValue("email", "updated@example.com")
                 .hasFieldOrPropertyWithValue("login", "updateduser")
                 .hasFieldOrPropertyWithValue("name", "Updated Name")
@@ -77,18 +83,18 @@ class UserDbStorageTest {
 
     @Test
     void testDeleteUser() {
-        User userToCreate = new User();
-        userToCreate.setEmail("delete@example.com");
-        userToCreate.setLogin("deleteuser");
-        userToCreate.setName("Delete Me");
-        userToCreate.setBirthday(LocalDate.of(1990, 1, 1));
+        UserDto dto = new UserDto();
+        dto.setEmail("delete@example.com");
+        dto.setLogin("deleteuser");
+        dto.setName("Delete Me");
+        dto.setBirthday(LocalDate.of(1990, 1, 1));
 
-        User createdUser = userDbStorage.createUser(userToCreate);
+        User user = UserMapper.toModel(dto);
+        User createdUser = userDbStorage.createUser(user);
         Long userId = createdUser.getId();
 
         userDbStorage.deleteUser(createdUser);
 
-        // Проверяем, что пользователь удалён
         assertThatThrownBy(() -> userDbStorage.getUserById(userId))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("User not found with id");
@@ -96,20 +102,23 @@ class UserDbStorageTest {
 
     @Test
     void testRetrieveAllUsers() {
-        // Создаём двух пользователей
-        User firstUser = new User();
-        firstUser.setEmail("user1@example.com");
-        firstUser.setLogin("user1");
-        firstUser.setName("User One");
-        firstUser.setBirthday(LocalDate.of(1990, 1, 1));
-        userDbStorage.createUser(firstUser);
+        UserDto dto1 = new UserDto();
+        dto1.setEmail("user1@example.com");
+        dto1.setLogin("user1");
+        dto1.setName("User One");
+        dto1.setBirthday(LocalDate.of(1990, 1, 1));
 
-        User secondUser = new User();
-        secondUser.setEmail("user2@example.com");
-        secondUser.setLogin("user2");
-        secondUser.setName("User Two");
-        secondUser.setBirthday(LocalDate.of(1992, 2, 2));
-        userDbStorage.createUser(secondUser);
+        UserDto dto2 = new UserDto();
+        dto2.setEmail("user2@example.com");
+        dto2.setLogin("user2");
+        dto2.setName("User Two");
+        dto2.setBirthday(LocalDate.of(1992, 2, 2));
+
+        User user1 = UserMapper.toModel(dto1);
+        User user2 = UserMapper.toModel(dto2);
+
+        userDbStorage.createUser(user1);
+        userDbStorage.createUser(user2);
 
         List<User> allUsers = userDbStorage.getAllUsers();
 
