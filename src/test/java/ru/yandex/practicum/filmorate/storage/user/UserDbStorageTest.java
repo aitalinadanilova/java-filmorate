@@ -95,6 +95,7 @@ class UserDbStorageTest {
         User fromDb = userDbStorage.getUserById(userId);
         assertThat(fromDb).isNull();
     }
+
     @Test
     void testRetrieveAllUsers() {
         UserDto dto1 = new UserDto();
