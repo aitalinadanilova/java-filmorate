@@ -6,7 +6,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Qualifier;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
