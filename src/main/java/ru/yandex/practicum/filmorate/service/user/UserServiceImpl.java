@@ -8,8 +8,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -34,8 +32,7 @@ public class UserServiceImpl implements UserService {
             throw new ValidationException("Пользователь с таким login уже существует");
         }
 
-        userStorage.createUser(user);
-        return user;
+        return userStorage.createUser(user);
     }
 
     @Override
@@ -61,49 +58,27 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addFriend(long userId, long friendId) {
-        User user = getUserById(userId);
-        User friend = getUserById(friendId);
-
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
-
-        userStorage.updateUser(user);
-        userStorage.updateUser(friend);
+        userStorage.addFriend(userId, friendId);
     }
+
 
     @Override
     public void removeFriend(long userId, long friendId) {
-        User user = getUserById(userId);
-        User friend = getUserById(friendId);
-
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
-
-        userStorage.updateUser(user);
-        userStorage.updateUser(friend);
-    }
-
-    @Override
-    public List<User> getCommonFriends(long userId, long otherUserId) {
-        User user = getUserById(userId);
-        User other = getUserById(otherUserId);
-
-        Set<Long> commonIds = user.getFriends().stream()
-                .filter(other.getFriends()::contains)
-                .collect(Collectors.toSet());
-
-        return commonIds.stream()
-                .map(this::getUserById)
-                .collect(Collectors.toList());
+        getUserById(userId);
+        getUserById(friendId);
+        userStorage.removeFriend(userId, friendId);
     }
 
     @Override
     public List<User> getFriends(long userId) {
-        User user = getUserById(userId);
-
-        return user.getFriends().stream()
-                .map(this::getUserById)
-                .collect(Collectors.toList());
+        getUserById(userId);
+        return userStorage.getFriends(userId);
     }
 
+    @Override
+    public List<User> getCommonFriends(long userId, long otherUserId) {
+        getUserById(userId);
+        getUserById(otherUserId);
+        return userStorage.getCommonFriends(userId, otherUserId);
+    }
 }

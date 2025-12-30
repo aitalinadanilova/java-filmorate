@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.storage.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
@@ -14,12 +15,22 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Objects;
 
-@Component
-@Qualifier("UserDbStorage")
+
+@Component("userDbStorage")
 @RequiredArgsConstructor
 public class UserDbStorage implements UserStorage {
 
     private final JdbcTemplate jdbcTemplate;
+
+    private final RowMapper<User> userRowMapper = (resultSet, rowNum) -> {
+        User user = new User();
+        user.setId(resultSet.getLong("id"));
+        user.setEmail(resultSet.getString("email"));
+        user.setLogin(resultSet.getString("login"));
+        user.setName(resultSet.getString("name"));
+        user.setBirthday(resultSet.getDate("birthday").toLocalDate());
+        return user;
+    };
 
     @Override
     public User createUser(User user) {
@@ -85,5 +96,51 @@ public class UserDbStorage implements UserStorage {
             user.setBirthday(resultSet.getDate("birthday").toLocalDate());
             return user;
         });
+    }
+
+    @Override
+    public void addFriend(long userId, long friendId) {
+        String sql = "INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, 'CONFIRMED')";
+        jdbcTemplate.update(sql, userId, friendId);
+    }
+
+
+
+    @Override
+    public List<User> getFriends(long userId) {
+        String sql = """
+        SELECT u.*
+        FROM users u
+        JOIN friendships f ON u.id = f.friend_id
+        WHERE f.user_id = ?
+    """;
+
+        return jdbcTemplate.query(sql, userRowMapper, userId);
+    }
+
+    @Override
+    public List<User> getCommonFriends(long userId, long otherUserId) {
+        String sql = """
+        SELECT u.*
+        FROM users u
+        JOIN friendships f1 ON u.id = f1.friend_id
+        JOIN friendships f2 ON u.id = f2.friend_id
+        WHERE f1.user_id = ?
+          AND f2.user_id = ?
+    """;
+
+        return jdbcTemplate.query(sql, userRowMapper, userId, otherUserId);
+    }
+
+    @Override
+    public void removeFriend(long userId, long friendId) {
+        jdbcTemplate.update(
+                "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?",
+                userId, friendId
+        );
+        jdbcTemplate.update(
+                "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?",
+                friendId, userId
+        );
     }
 }

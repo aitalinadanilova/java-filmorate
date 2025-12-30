@@ -44,8 +44,8 @@ public class FilmMapper {
 
         dto.setMpa(film.getMpa());
         dto.setGenres(
-                dto.getGenres() != null
-                        ? new HashSet<>(dto.getGenres())
+                film.getGenres() != null
+                        ? new HashSet<>(film.getGenres())
                         : new HashSet<>()
         );
 

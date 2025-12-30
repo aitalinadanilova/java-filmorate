@@ -14,7 +14,6 @@ public class UserMapper {
         user.setLogin(dto.getLogin());
         user.setName(dto.getName());
         user.setBirthday(dto.getBirthday());
-        user.setFriends(dto.getFriends() != null ? dto.getFriends() : new java.util.HashSet<>());
         return user;
     }
 
@@ -27,7 +26,6 @@ public class UserMapper {
         dto.setLogin(user.getLogin());
         dto.setName(user.getName());
         dto.setBirthday(user.getBirthday());
-        dto.setFriends(user.getFriends());
         return dto;
     }
 }
