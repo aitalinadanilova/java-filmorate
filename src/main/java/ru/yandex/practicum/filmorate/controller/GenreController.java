@@ -1,33 +1,29 @@
 package ru.yandex.practicum.filmorate.controller;
 
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.service.genre.GenreServiceImpl;
 
 import java.util.List;
 
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/genres")
-@RequiredArgsConstructor
 public class GenreController {
-
-    private final @Qualifier("genreDbStorage") GenreStorage genreStorage;
+    private final GenreServiceImpl service;
 
     @GetMapping
-    public List<Genre> getAllGenres() {
-        return genreStorage.getAllGenres();
+    public List<Genre> getAll() {
+        return service.getAll();
     }
 
     @GetMapping("/{id}")
-    public Genre getGenreById(@PathVariable long id) {
-        Genre genre = genreStorage.getGenreById(id);
-        if (genre == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Genre not found");
-        }
-        return genre;
+    public Genre getById(@PathVariable Long id) {
+        return service.getById(id);
     }
 }

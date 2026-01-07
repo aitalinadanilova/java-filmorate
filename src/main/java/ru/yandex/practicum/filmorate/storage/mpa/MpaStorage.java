@@ -1,13 +1,15 @@
 package ru.yandex.practicum.filmorate.storage.mpa;
 
-import ru.yandex.practicum.filmorate.model.MpaRating;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.util.List;
 
 public interface MpaStorage {
 
-    List<MpaRating> getAll();
+    List<Mpa> getAll();
 
-    MpaRating getById(long id);
+    Mpa getById(Long id);
+
+    Mpa getMpaOfFilm(Long id);
 
 }

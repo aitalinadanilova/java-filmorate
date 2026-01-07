@@ -2,12 +2,11 @@ package ru.yandex.practicum.filmorate.service.genre;
 
 import ru.yandex.practicum.filmorate.model.Genre;
 
-import java.util.Collection;
+import java.util.List;
 
 public interface GenreService {
 
-    Collection<Genre> getAllGenres();
+    List<Genre> getAll();
 
-    Genre getGenreById(long id);
-
+    Genre getById(Long id);
 }

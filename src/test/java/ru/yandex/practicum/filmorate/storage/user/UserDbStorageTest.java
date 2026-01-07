@@ -1,12 +1,13 @@
 package ru.yandex.practicum.filmorate.storage.user;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.context.annotation.Import;
-import ru.yandex.practicum.filmorate.dto.UserDto;
-import ru.yandex.practicum.filmorate.mapper.UserMapper;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
@@ -16,111 +17,78 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@Import(UserDbStorage.class)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
+@ContextConfiguration(classes = {UserStorage.class})
+@ComponentScan(basePackages = {"ru.yandex.practicum.filmorate.storage.user"})
 class UserDbStorageTest {
-
-    @Autowired
-    private UserDbStorage userDbStorage;
+    private final UserStorage storage;
 
     @Test
-    void contextLoads() {
-        assertThat(userDbStorage).isNotNull();
+    void createUser() {
+        storage.createUser(new User(
+                1L,
+                "new@test.ru",
+                "login1",
+                "name1",
+                LocalDate.of(1991,01,12),
+                null
+        ));
+        User user = storage.getUser(1L);
+        assertThat(user).hasFieldOrPropertyWithValue("email", "new@test.ru");
+        assertThat(user).hasFieldOrPropertyWithValue("login", "login1");
+        assertThat(user).hasFieldOrPropertyWithValue("name", "name1");
+        assertThat(user).hasFieldOrProperty("birthday");
     }
 
     @Test
-    void testCreateAndRetrieveUser() {
-        UserDto dto = new UserDto();
-        dto.setEmail("test@example.com");
-        dto.setLogin("testuser");
-        dto.setName("Test User");
-        dto.setBirthday(LocalDate.of(2000, 1, 1));
+    @Sql(scripts = {"/clear-all.sql","/test-get-users.sql"})
+    void updateUser() {
+        storage.updateUser(new User(
+                1L,
+                "updated@test.ru",
+                "login1Updated",
+                "name1Updated",
+                LocalDate.of(1991,01,12),
+                null
+        ));
 
-        User user = UserMapper.toModel(dto);
-        User createdUser = userDbStorage.createUser(user);
+        User user = storage.getUser(1L);
+        assertThat(user).hasFieldOrPropertyWithValue("email", "updated@test.ru");
+        assertThat(user).hasFieldOrPropertyWithValue("login", "login1Updated");
+        assertThat(user).hasFieldOrPropertyWithValue("name", "name1Updated");
+        assertThat(user).hasFieldOrProperty("birthday");
 
-        assertThat(createdUser.getId()).isNotNull();
-
-        User fromDb = userDbStorage.getUserById(createdUser.getId());
-
-        assertThat(fromDb)
-                .isNotNull()
-                .hasFieldOrPropertyWithValue("email", "test@example.com")
-                .hasFieldOrPropertyWithValue("login", "testuser")
-                .hasFieldOrPropertyWithValue("name", "Test User")
-                .hasFieldOrPropertyWithValue("birthday", LocalDate.of(2000, 1, 1));
     }
 
     @Test
-    void testUpdateUser() {
-        UserDto dto = new UserDto();
-        dto.setEmail("initial@example.com");
-        dto.setLogin("initialuser");
-        dto.setName("Initial Name");
-        dto.setBirthday(LocalDate.of(1995, 5, 5));
-
-        User user = UserMapper.toModel(dto);
-        User createdUser = userDbStorage.createUser(user);
-
-        dto.setId(createdUser.getId());
-        dto.setEmail("updated@example.com");
-        dto.setLogin("updateduser");
-        dto.setName("Updated Name");
-        dto.setBirthday(LocalDate.of(1999, 9, 9));
-
-        User updatedUserModel = UserMapper.toModel(dto);
-        userDbStorage.updateUser(updatedUserModel);
-
-        User fromDb = userDbStorage.getUserById(createdUser.getId());
-
-        assertThat(fromDb)
-                .hasFieldOrPropertyWithValue("email", "updated@example.com")
-                .hasFieldOrPropertyWithValue("login", "updateduser")
-                .hasFieldOrPropertyWithValue("name", "Updated Name")
-                .hasFieldOrPropertyWithValue("birthday", LocalDate.of(1999, 9, 9));
+    @Sql(scripts = {"/clear-all.sql","/test-get-users.sql"})
+    void getUser() {
+        List<User> users = storage.getAllUsers();
+        assertThat(users.get(0)).hasFieldOrPropertyWithValue("email", "email1@email.ru");
+        assertThat(users.get(0)).hasFieldOrPropertyWithValue("login", "login1");
+        assertThat(users.get(0)).hasFieldOrPropertyWithValue("name", "name1");
+        assertThat(users.get(0)).hasFieldOrProperty("birthday");
     }
 
     @Test
-    void testDeleteUser() {
-        UserDto dto = new UserDto();
-        dto.setEmail("delete@example.com");
-        dto.setLogin("deleteuser");
-        dto.setName("Delete Me");
-        dto.setBirthday(LocalDate.of(1990, 1, 1));
+    @Sql(scripts = {"/clear-all.sql","/test-get-users.sql"})
+    void getAllUsers() {
+        List<User> users = storage.getAllUsers();
 
-        User user = UserMapper.toModel(dto);
-        User createdUser = userDbStorage.createUser(user);
-        Long userId = createdUser.getId();
+        assertThat(users.get(0)).hasFieldOrPropertyWithValue("email", "email1@email.ru");
+        assertThat(users.get(0)).hasFieldOrPropertyWithValue("login", "login1");
+        assertThat(users.get(0)).hasFieldOrPropertyWithValue("name", "name1");
+        assertThat(users.get(0)).hasFieldOrProperty("birthday");
 
-        userDbStorage.deleteUser(createdUser);
-        User fromDb = userDbStorage.getUserById(userId);
-        assertThat(fromDb).isNull();
+        assertThat(users.get(1)).hasFieldOrPropertyWithValue("email", "email2@email.ru");
+        assertThat(users.get(1)).hasFieldOrPropertyWithValue("login", "login2");
+        assertThat(users.get(1)).hasFieldOrPropertyWithValue("name", "name2");
+        assertThat(users.get(1)).hasFieldOrProperty("birthday");
+
+        assertThat(users.get(2)).hasFieldOrPropertyWithValue("email", "email3@email.ru");
+        assertThat(users.get(2)).hasFieldOrPropertyWithValue("login", "login3");
+        assertThat(users.get(2)).hasFieldOrPropertyWithValue("name", "name3");
+        assertThat(users.get(2)).hasFieldOrProperty("birthday");
     }
 
-    @Test
-    void testRetrieveAllUsers() {
-        UserDto dto1 = new UserDto();
-        dto1.setEmail("user1@example.com");
-        dto1.setLogin("user1");
-        dto1.setName("User One");
-        dto1.setBirthday(LocalDate.of(1990, 1, 1));
-
-        UserDto dto2 = new UserDto();
-        dto2.setEmail("user2@example.com");
-        dto2.setLogin("user2");
-        dto2.setName("User Two");
-        dto2.setBirthday(LocalDate.of(1992, 2, 2));
-
-        User user1 = UserMapper.toModel(dto1);
-        User user2 = UserMapper.toModel(dto2);
-
-        userDbStorage.createUser(user1);
-        userDbStorage.createUser(user2);
-
-        List<User> allUsers = userDbStorage.getAllUsers();
-
-        assertThat(allUsers)
-                .hasSizeGreaterThanOrEqualTo(2)
-                .extracting("email")
-                .contains("user1@example.com", "user2@example.com");
-    }
 }

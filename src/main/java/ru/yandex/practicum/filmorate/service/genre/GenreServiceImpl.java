@@ -6,25 +6,23 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 
-import java.util.Collection;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class GenreServiceImpl implements GenreService {
+    private final GenreStorage storage;
 
-    private final GenreStorage genreStorage;
-
-    @Override
-    public Collection<Genre> getAllGenres() {
-        return genreStorage.getAllGenres();
+    public List<Genre> getAll() {
+        return storage.getAll();
     }
 
-    @Override
-    public Genre getGenreById(long id) {
-        Genre genre = genreStorage.getGenreById(id);
-        if (genre == null) {
-            throw new NotFoundException("Genre not found");
+    public Genre getById(Long id) {
+        if (storage.getById(id) == null) {
+            throw new NotFoundException("Жанра с таким id = " + id + " нет");
+        } else {
+            return storage.getById(id);
         }
-        return genre;
+
     }
 }

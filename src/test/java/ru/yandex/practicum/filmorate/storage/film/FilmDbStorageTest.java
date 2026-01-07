@@ -1,133 +1,100 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.context.annotation.Import;
-import ru.yandex.practicum.filmorate.dto.FilmDto;
-import ru.yandex.practicum.filmorate.mapper.FilmMapper;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.MpaRating;
+import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@Import(FilmDbStorage.class)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
+@ContextConfiguration(classes = {FilmStorage.class})
+@ComponentScan(basePackages = {"ru.yandex.practicum.filmorate.storage.film"})
 class FilmDbStorageTest {
-
-    @Autowired
-    private FilmDbStorage filmDbStorage;
+    private final FilmStorage storage;
 
     @Test
-    void testCreateAndGetFilm() {
-        FilmDto dto = new FilmDto();
-        dto.setName("Test Film");
-        dto.setDescription("Description");
-        dto.setReleaseDate(LocalDate.of(2023, 1, 1));
-        dto.setDuration(120);
-        dto.setMpa(MpaRating.G);
-        dto.setGenres(Set.of(new Genre(1L, "Комедия")));
-
-        Film film = FilmMapper.toModel(dto);
-        filmDbStorage.createFilm(film);
-
-        assertThat(film.getId()).isNotNull();
-
-        Film fromDb = filmDbStorage.getFilmById(film.getId());
-        assertThat(fromDb.getName()).isEqualTo("Test Film");
-        assertThat(fromDb.getDuration()).isEqualTo(120);
-        assertThat(fromDb.getMpa()).isEqualTo(MpaRating.G);
-        assertThat(fromDb.getGenres().stream().map(Genre::getId).collect(Collectors.toSet()))
-                .containsExactlyInAnyOrder(1L);
+    void createFilm() {
+        storage.createFilm(new Film(
+                1L,
+                "updateName",
+                "description",
+                LocalDate.of(1991,01,12),
+                200,
+                new ArrayList<>(),
+                new ArrayList<>(),
+                new Mpa(1L,"G")
+        ));
+        Film film = storage.getFilm(1L);
+        assertThat(film).hasFieldOrPropertyWithValue("name", "updateName");
+        assertThat(film).hasFieldOrPropertyWithValue("description", "description");
+        assertThat(film).hasFieldOrProperty("releaseDate");
+        assertThat(film).hasFieldOrPropertyWithValue("duration", 200);
     }
 
     @Test
-    void testUpdateFilm() {
-        FilmDto dto = new FilmDto();
-        dto.setName("Initial Film");
-        dto.setDescription("Initial Description");
-        dto.setReleaseDate(LocalDate.of(2023, 1, 1));
-        dto.setDuration(100);
-        dto.setMpa(MpaRating.PG);
-        dto.setGenres(Set.of(new Genre(1L, "Комедия")));
+    @Sql(scripts = {"/test-get-films.sql"})
+    void updateFilm() {
+        storage.updateFilm(new Film(
+                1L,
+                "updateName",
+                "description",
+                LocalDate.of(1991,01,12),
+                200,
+                null,
+                null,
+                new Mpa(1L,"G")
+        ));
 
-        Film film = FilmMapper.toModel(dto);
-        filmDbStorage.createFilm(film);
+        Film film = storage.getFilm(1L);
+        assertThat(film).hasFieldOrPropertyWithValue("name", "updateName");
+        assertThat(film).hasFieldOrPropertyWithValue("description", "description");
+        assertThat(film).hasFieldOrProperty("releaseDate");
+        assertThat(film).hasFieldOrPropertyWithValue("duration", 200);
 
-        dto.setId(film.getId());
-        dto.setName("Updated Film");
-        dto.setDescription("Updated Description");
-        dto.setDuration(150);
-        dto.setMpa(MpaRating.R);
-        dto.setGenres(Set.of(new Genre(2L, "Драма")));
-
-        Film updatedFilm = FilmMapper.toModel(dto);
-        filmDbStorage.updateFilm(updatedFilm);
-
-        Film fromDb = filmDbStorage.getFilmById(film.getId());
-        assertThat(fromDb.getName()).isEqualTo("Updated Film");
-        assertThat(fromDb.getDescription()).isEqualTo("Updated Description");
-        assertThat(fromDb.getDuration()).isEqualTo(150);
-        assertThat(fromDb.getMpa()).isEqualTo(MpaRating.R);
-        assertThat(fromDb.getGenres().stream().map(Genre::getId).collect(Collectors.toSet()))
-                .containsExactlyInAnyOrder(2L);
     }
 
     @Test
-    void testGetAllFilms() {
-        FilmDto dto1 = new FilmDto();
-        dto1.setName("Film 1");
-        dto1.setDescription("Desc 1");
-        dto1.setReleaseDate(LocalDate.of(2023, 1, 1));
-        dto1.setDuration(90);
-        dto1.setMpa(MpaRating.G);
-        dto1.setGenres(Set.of(new Genre(1L, "Комедия")));
-
-        FilmDto dto2 = new FilmDto();
-        dto2.setName("Film 2");
-        dto2.setDescription("Desc 2");
-        dto2.setReleaseDate(LocalDate.of(2023, 2, 1));
-        dto2.setDuration(110);
-        dto2.setMpa(MpaRating.PG);
-        dto2.setGenres(Set.of(new Genre(2L, "Драма")));
-
-        Film film1 = FilmMapper.toModel(dto1);
-        Film film2 = FilmMapper.toModel(dto2);
-
-        filmDbStorage.createFilm(film1);
-        filmDbStorage.createFilm(film2);
-
-        List<Film> films = List.copyOf(filmDbStorage.getAllFilms());
-        assertThat(films).hasSizeGreaterThanOrEqualTo(2)
-                .extracting(Film::getName)
-                .contains("Film 1", "Film 2");
+    @Sql(scripts = {"/test-get-films.sql"})
+    void getFilm() {
+        Film film = storage.getFilm(1L);
+        assertThat(film).hasFieldOrPropertyWithValue("name", "film_name1");
+        assertThat(film).hasFieldOrPropertyWithValue("description", "description");
+        assertThat(film).hasFieldOrProperty("releaseDate");
+        assertThat(film).hasFieldOrPropertyWithValue("duration", 60);
     }
 
     @Test
-    void testDeleteFilm() {
-        FilmDto dto = new FilmDto();
-        dto.setName("Delete Film");
-        dto.setDescription("To be deleted");
-        dto.setReleaseDate(LocalDate.of(2023, 1, 1));
-        dto.setDuration(100);
-        dto.setMpa(MpaRating.PG_13);
-        dto.setGenres(Set.of(new Genre(3L, "Мультфильм")));
+    @Sql(scripts = {"/test-get-films.sql"})
+    void getAllFilms() {
+        List<Film> films = storage.getAllFilms();
+        System.out.println(films);
 
-        Film film = FilmMapper.toModel(dto);
-        filmDbStorage.createFilm(film);
-        Long id = film.getId();
+        assertThat(films.get(0)).hasFieldOrPropertyWithValue("name", "film_name1");
+        assertThat(films.get(0)).hasFieldOrPropertyWithValue("description", "description");
+        assertThat(films.get(0)).hasFieldOrProperty("releaseDate");
+        assertThat(films.get(0)).hasFieldOrPropertyWithValue("duration", 60);
 
-        filmDbStorage.deleteFilm(film);
+        assertThat(films.get(1)).hasFieldOrPropertyWithValue("name", "film_name2");
+        assertThat(films.get(1)).hasFieldOrPropertyWithValue("description", "description");
+        assertThat(films.get(1)).hasFieldOrProperty("releaseDate");
+        assertThat(films.get(1)).hasFieldOrPropertyWithValue("duration", 40);
 
-        assertThrows(RuntimeException.class, () -> filmDbStorage.getFilmById(id));
+        assertThat(films.get(2)).hasFieldOrPropertyWithValue("name", "film_name3");
+        assertThat(films.get(2)).hasFieldOrPropertyWithValue("description", "description");
+        assertThat(films.get(2)).hasFieldOrProperty("releaseDate");
+        assertThat(films.get(2)).hasFieldOrPropertyWithValue("duration", 74);
     }
 }

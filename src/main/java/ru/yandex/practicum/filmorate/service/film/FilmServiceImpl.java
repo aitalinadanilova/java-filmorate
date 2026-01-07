@@ -1,111 +1,82 @@
 package ru.yandex.practicum.filmorate.service.film;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.dto.FilmDto;
-import ru.yandex.practicum.filmorate.mapper.FilmMapper;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.service.genre.GenreService;
-import ru.yandex.practicum.filmorate.service.mpa.MpaService;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.service.user.UserService;
+import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
+@Slf4j
+@RequiredArgsConstructor
 public class FilmServiceImpl implements FilmService {
-
     private final FilmStorage filmStorage;
-    private final UserService userService;
-    private final GenreService genreService;
-    private final MpaService mpaService;
+    private final GenreStorage genreStorage;
+    private final MpaStorage mpaStorage;
+    private final UserStorage userStorage;
 
-    public FilmServiceImpl(@Qualifier("filmDbStorage") FilmStorage filmStorage,
-                           UserService userService,
-                           GenreService genreService,
-                           MpaService mpaService) {
-        this.filmStorage = filmStorage;
-        this.userService = userService;
-        this.genreService = genreService;
-        this.mpaService = mpaService;
-    }
-
-    @Override
-    public Film createFilm(FilmDto filmDto) {
-        Film film = FilmMapper.toModel(filmDto);
-
-        mpaService.getMpaById(film.getMpa().getId());
-
-        if (film.getGenres() != null) {
-            film.setGenres(
-                    film.getGenres().stream()
-                            .map(g -> genreService.getGenreById(g.getId()))
-                            .collect(Collectors.toSet())
-            );
+    public Film createFilm(Film film) {
+        if (mpaStorage.getById(film.getMpa().getId()) == null) {
+            throw new ValidationException("Указанный MPA  не найден");
         }
-
-        filmStorage.createFilm(film);
-        return film;
-    }
-
-    @Override
-    public Film updateFilm(FilmDto filmDto) {
-        getFilmModelById(filmDto.getId());
-        Film film = FilmMapper.toModel(filmDto);
-
-        mpaService.getMpaById(film.getMpa().getId());
-
         if (film.getGenres() != null) {
-            film.setGenres(
-                    film.getGenres().stream()
-                            .map(g -> genreService.getGenreById(g.getId()))
-                            .collect(Collectors.toSet())
-            );
+            genreStorage.checkGenresExists(film.getGenres());
         }
-
-        filmStorage.updateFilm(film);
-        return film;
+        log.info("Фильм {} создан", film);
+        return filmStorage.createFilm(film);
     }
 
-    @Override
-    public void addLike(long filmId, long userId) {
-        Film film = getFilmModelById(filmId);
-        userService.getUserById(userId);
-        film.getLikes().add(userId);
-        filmStorage.updateFilm(film);
+    public Film updateFilm(Film film) {
+        if (film.getId() == null) {
+            log.info("Id должен быть указан");
+            throw new NullPointerException("Id должен быть указан");
+        }
+        if (filmStorage.getFilm(film.getId()) != null) {
+            return filmStorage.updateFilm(film);
+        }
+        log.info("Не найден фильм");
+        throw new NotFoundException("Фильм с id = " + film.getId() + " не найден");
     }
 
-    @Override
-    public void removeLike(long filmId, long userId) {
-        Film film = getFilmModelById(filmId);
-        userService.getUserById(userId);
-        film.getLikes().remove(userId);
-        filmStorage.updateFilm(film);
+    public Film getFilm(Long filmId) {
+        if (filmStorage.getFilm(filmId) != null) {
+            return filmStorage.getFilm(filmId);
+        }
+        throw new NotFoundException("Фильм с id = " + filmId + " не найден");
     }
 
-    @Override
-    public List<Film> getTopFilms(int count) {
-        return filmStorage.getAllFilms().stream()
-                .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
-                .limit(count)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public Film getFilmById(long id) {
-        return getFilmModelById(id);
-    }
-
-    @Override
-    public Collection<Film> getAllFilms() {
+    public List<Film> getAllFilms() {
         return filmStorage.getAllFilms();
     }
 
-    private Film getFilmModelById(long id) {
-        return filmStorage.getFilmById(id);
+    public void addLikeToFilm(Long filmId, Long userId) {
+        if (filmStorage.getFilm(filmId) == null) {
+            throw new NotFoundException("Фильм отсуствует");
+        } else if (userStorage.getUser(userId) == null) {
+            throw new NotFoundException("Пользователь отсутсвует");
+        }
+        filmStorage.checkLikeOnFilm(filmId,userId);
+        filmStorage.addLike(filmId, userId);
+    }
+
+    public void removeLikeToFilm(Long filmId, Long userId) {
+        if (filmStorage.getFilm(filmId) == null) {
+            throw new NotFoundException("Фильм с таким ID не найден!");
+        } else if (userStorage.getUser(userId) == null) {
+            throw new NotFoundException("Пользователь с таким ID не найден!");
+        }
+        filmStorage.removeLike(filmId, userId);
+    }
+
+    public List<Film> getPopularFilms(Long count) {
+        return filmStorage.getPopularFilms(count);
     }
 
 }
