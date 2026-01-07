@@ -24,7 +24,7 @@ public class FilmServiceImpl implements FilmService {
 
     public Film createFilm(Film film) {
         if (mpaStorage.getById(film.getMpa().getId()) == null) {
-            throw new ValidationException("Указанный MPA  не найден");
+            throw new NotFoundException("Указанный MPA  не найден");
         }
         if (film.getGenres() != null) {
             genreStorage.checkGenresExists(film.getGenres());

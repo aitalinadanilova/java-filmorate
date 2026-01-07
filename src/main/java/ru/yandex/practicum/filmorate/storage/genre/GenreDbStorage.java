@@ -47,7 +47,7 @@ public class GenreDbStorage implements GenreStorage {
     public boolean checkGenresExists(List<Genre> genres) {
         for (Genre genre : genres) {
             if ((jdbcTemplate.query("SELECT * FROM genres WHERE id = ?", new DataClassRowMapper<>(Genre.class),genre.getId())).isEmpty()) {
-                throw new ValidationException("Жанр с id = " + genre.getId() + " отсутствует");
+                throw new NotFoundException("Жанр с id = " + genre.getId() + " отсутствует");
             }
         }
         return true;

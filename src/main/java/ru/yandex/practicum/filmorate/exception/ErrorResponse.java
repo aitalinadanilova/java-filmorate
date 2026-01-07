@@ -11,4 +11,5 @@ public class ErrorResponse {
     this.error = error;
     this.description = description;
   }
+
 }
