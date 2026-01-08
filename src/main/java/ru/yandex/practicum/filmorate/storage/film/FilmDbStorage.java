@@ -53,62 +53,98 @@ public class FilmDbStorage implements FilmStorage {
     public Film updateFilm(Film film) {
         String sqlQuery =
                 "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, rating_mpa_id = ? WHERE id = ?";
+
         jdbcTemplate.update(
                 sqlQuery,
                 film.getName(),
                 film.getDescription(),
-                film.getReleaseDate(),
+                Date.valueOf(film.getReleaseDate()),
                 film.getDuration(),
                 film.getMpa().getId(),
                 film.getId()
         );
+
+        jdbcTemplate.update(
+                "DELETE FROM films_genre WHERE film_id = ?",
+                film.getId()
+        );
+
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            for (Genre genre : film.getGenres()) {
+                jdbcTemplate.update(
+                        "INSERT INTO films_genre (film_id, genre_id) VALUES (?, ?)",
+                        film.getId(),
+                        genre.getId()
+                );
+            }
+        }
+
         return film;
     }
 
+
     @Override
     public Film getFilm(Long filmId) {
-        List<Film> films = jdbcTemplate.query("SELECT f.id, " +
-                "f.name, " +
-                "f.description, " +
-                "f.release_date, " +
-                "f.duration, " +
-                "l.USER_ID AS like_id, " +
-                "mr.id AS mpa_id, " +
-                "mr.name AS mpa_name, " +
-                "g.id AS genre_id , " +
-                "g.name AS genre_name " +
-                "FROM films AS f " +
-                "LEFT JOIN LIKES AS l ON (f.ID = l.FILM_ID) " +
-                "LEFT JOIN RATING_MPA AS mr ON (f.RATING_MPA_ID  = mr.ID) " +
-                "LEFT JOIN FILMS_GENRE AS fg ON (f.ID  = fg.film_id) " +
-                "LEFT JOIN GENRES AS g ON (fg.genre_id = g.ID)" +
-                "WHERE F.ID = ?;", mapper, filmId);
-        if (films.size() == 0) {
+        List<Film> films = jdbcTemplate.query(
+                "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                        "mr.id AS mpa_id, mr.name AS mpa_name " +
+                        "FROM films f " +
+                        "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
+                        "WHERE f.id = ?",
+                mapper,
+                filmId
+        );
+
+        if (films.isEmpty()) {
             return null;
         }
-        return films.get(0);
+
+        Film film = films.get(0);
+
+        film.setGenres(getGenresByFilmId(filmId));
+        film.setLikes(getLikesByFilmId(filmId));
+
+        return film;
     }
+
 
     @Override
     public List<Film> getAllFilms() {
-        List<Film> films = jdbcTemplate.query("SELECT f.id, " +
-                "f.name, " +
-                "f.description, " +
-                "f.release_date, " +
-                "f.duration, " +
-                "l.USER_ID AS like_id, " +
-                "mr.id AS mpa_id, " +
-                "mr.name AS mpa_name, " +
-                "g.id AS genre_id , " +
-                "g.name AS genre_name " +
-                "FROM films AS f " +
-                "LEFT JOIN LIKES AS l ON (f.ID = l.FILM_ID) " +
-                "LEFT JOIN RATING_MPA AS mr ON (f.RATING_MPA_ID  = mr.ID) " +
-                "LEFT JOIN FILMS_GENRE AS fg ON (f.ID  = fg.film_id) " +
-                "LEFT JOIN GENRES AS g ON (fg.genre_id = g.ID);", mapper);
-        Set<Film> uniqueFilms = new TreeSet<>(Comparator.comparing(Film::getId));
-        uniqueFilms.addAll(films);
-        return new ArrayList<>(uniqueFilms);
+        List<Film> films = jdbcTemplate.query(
+                "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                        "mr.id AS mpa_id, mr.name AS mpa_name " +
+                        "FROM films f " +
+                        "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id",
+                mapper
+        );
+
+        for (Film film : films) {
+            film.setGenres(getGenresByFilmId(film.getId()));
+            film.setLikes(getLikesByFilmId(film.getId()));
+        }
+
+        return films;
+    }
+
+    private List<Genre> getGenresByFilmId(Long filmId) {
+        return jdbcTemplate.query(
+                "SELECT g.id, g.name FROM genres g " +
+                        "JOIN films_genre fg ON g.id = fg.genre_id " +
+                        "WHERE fg.film_id = ?",
+                (rs, rowNum) -> Genre.builder()
+                        .id(rs.getLong("id"))
+                        .name(rs.getString("name"))
+                        .build(),
+                filmId
+        );
+    }
+
+    private List<Long> getLikesByFilmId(Long filmId) {
+        return jdbcTemplate.queryForList(
+                "SELECT user_id FROM likes WHERE film_id = ?",
+                Long.class,
+                filmId
+        );
     }
 
     @Override

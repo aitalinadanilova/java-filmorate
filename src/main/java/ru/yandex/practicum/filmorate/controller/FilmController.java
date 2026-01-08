@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.service.film.FilmServiceImpl;
+import ru.yandex.practicum.filmorate.service.film.FilmService;
 
 import java.util.Collection;
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.List;
 @Slf4j
 @RequiredArgsConstructor
 public class FilmController {
-    private final FilmServiceImpl service;
+    private final FilmService service;
 
     @GetMapping
     public Collection<Film> findAll() {

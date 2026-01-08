@@ -24,6 +24,7 @@ public class Film {
     private String name;
 
     @Size(max = 200)
+    @NotBlank(message = "Описание фильма не может быть пустым")
     private String description;
 
     @BeforeDate

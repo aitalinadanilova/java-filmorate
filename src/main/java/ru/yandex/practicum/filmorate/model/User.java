@@ -2,9 +2,10 @@ package ru.yandex.practicum.filmorate.model;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 import org.springframework.validation.annotation.Validated;
-import ru.yandex.practicum.filmorate.validation.AfterDate;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,11 +24,12 @@ public class User {
     private String email;
 
     @NotBlank(message = "Login не должен быть пустым")
+    @Pattern(regexp = "^[^ ]+$", message = "Логин не может содержать пробелы")
     private String login;
 
     private String name;
 
-    @AfterDate
+    @Past(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
 
     private List<Long> friends;
