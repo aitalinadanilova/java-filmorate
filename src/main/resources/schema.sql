@@ -58,9 +58,3 @@ CREATE TABLE IF NOT EXISTS friends (
     FOREIGN KEY (user1_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-ALTER TABLE films ADD FOREIGN KEY (rating_mpa_id) REFERENCES rating_mpa (id);
-
-ALTER TABLE likes ADD FOREIGN KEY (film_id) REFERENCES films (id);
-
-ALTER TABLE likes ADD FOREIGN KEY (user_id) REFERENCES users (id);
