@@ -145,26 +145,37 @@ public class FilmDbStorage implements FilmStorage {
         Map<Long, Film> filmMap = films.stream().collect(Collectors.toMap(Film::getId, f -> f));
         String ids = filmMap.keySet().stream().map(String::valueOf).collect(Collectors.joining(","));
 
-        jdbcTemplate.query("SELECT fg.film_id, g.id, g.name FROM genres g " +
-                        "JOIN films_genre fg ON g.id = fg.genre_id WHERE fg.film_id IN (" + ids + ")",
-                rs -> {
-                    filmMap.get(rs.getLong("film_id")).getGenres().add(
-                            Genre.builder().id(rs.getLong("id")).name(rs.getString("name")).build()
-                    );
-                });
+        String sqlGenres = "SELECT fg.film_id, g.id, g.name FROM genres g " +
+                "JOIN films_genre fg ON g.id = fg.genre_id WHERE fg.film_id IN (" + ids + ")";
+        jdbcTemplate.query(sqlGenres, rs -> {
+            Film film = filmMap.get(rs.getLong("film_id"));
+            if (film != null) {
+                film.getGenres().add(Genre.builder()
+                        .id(rs.getLong("id"))
+                        .name(rs.getString("name"))
+                        .build());
+            }
+        });
 
-        jdbcTemplate.query("SELECT fd.film_id, d.director_id, d.director_name FROM directors d " +
-                        "JOIN film_director fd ON d.director_id = fd.director_id WHERE fd.film_id IN (" + ids + ")",
-                rs -> {
-                    filmMap.get(rs.getLong("film_id")).getDirector().add(
-                            Director.builder().id(rs.getLong("director_id")).name(rs.getString("director_name")).build()
-                    );
-                });
+        String sqlDirectors = "SELECT fd.film_id, d.director_id, d.director_name FROM directors d " +
+                "JOIN film_director fd ON d.director_id = fd.director_id WHERE fd.film_id IN (" + ids + ")";
+        jdbcTemplate.query(sqlDirectors, rs -> {
+            Film film = filmMap.get(rs.getLong("film_id"));
+            if (film != null) {
+                film.getDirectors().add(Director.builder()
+                        .id(rs.getLong("director_id"))
+                        .name(rs.getString("director_name"))
+                        .build());
+            }
+        });
 
-        jdbcTemplate.query("SELECT film_id, user_id FROM likes WHERE film_id IN (" + ids + ")",
-                rs -> {
-                    filmMap.get(rs.getLong("film_id")).getLikes().add(rs.getLong("user_id"));
-                });
+        String sqlLikes = "SELECT film_id, user_id FROM likes WHERE film_id IN (" + ids + ")";
+        jdbcTemplate.query(sqlLikes, rs -> {
+            Film film = filmMap.get(rs.getLong("film_id"));
+            if (film != null) {
+                film.getLikes().add(rs.getLong("user_id"));
+            }
+        });
     }
 
     private void updateGenres(Film film) {
@@ -188,8 +199,8 @@ public class FilmDbStorage implements FilmStorage {
 
     private void updateDirectorsForFilm(Film film) {
         jdbcTemplate.update("DELETE FROM film_director WHERE film_id = ?", film.getId());
-        if (film.getDirector() != null && !film.getDirector().isEmpty()) {
-            List<Director> directors = new ArrayList<>(new LinkedHashSet<>(film.getDirector()));
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            List<Director> directors = new ArrayList<>(new LinkedHashSet<>(film.getDirectors()));
             jdbcTemplate.batchUpdate("INSERT INTO film_director (film_id, director_id) VALUES (?, ?)",
                     new BatchPreparedStatementSetter() {
                         public void setValues(PreparedStatement ps, int i) throws SQLException {
