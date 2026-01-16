@@ -18,7 +18,7 @@ public class Director {
     private Long id;
 
     @JsonProperty("name")
-    @NotBlank(message = "Ошибка! Имя режиссера не может быть пустым.")
+    //@NotBlank(message = "Ошибка! Имя режиссера не может быть пустым.")
     private String name;
 
 }
