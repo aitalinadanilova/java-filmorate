@@ -8,6 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import ru.yandex.practicum.filmorate.validation.BeforeDate;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -33,11 +34,16 @@ public class Film {
     @Positive
     private Integer duration;
 
-    private List<Long> likes;
+    @Builder.Default
+    private List<Long> likes = new ArrayList<>();
 
-    private List<Genre> genres;
+    @Builder.Default
+    private List<Genre> genres = new ArrayList<>();
 
     @NonNull
     private Mpa mpa;
+
+    @Builder.Default
+    private List<Director> director = new ArrayList<>();
 
 }

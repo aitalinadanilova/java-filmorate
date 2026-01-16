@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service.film;
 
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.List;
@@ -19,4 +20,17 @@ public interface FilmService {
     void removeLikeToFilm(Long filmId, Long userId);
 
     List<Film> getPopularFilms(Long count);
+
+    List<Director> findDirectors();
+
+    Director findDirectorById(Long id);
+
+    Director createDirector(Director director);
+
+    Director updateDirector(Director director);
+
+    void deleteDirectorById(Long id);
+
+    List<Film> findSortFilmsByDirector(Long directorId, String sortBy);
+
 }
