@@ -12,11 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@Validated
-@EqualsAndHashCode
 @Builder(toBuilder = true)
 @NoArgsConstructor
-@RequiredArgsConstructor
 @AllArgsConstructor
 public class Film {
     private Long id;
@@ -25,7 +22,7 @@ public class Film {
     private String name;
 
     @Size(max = 200)
-    @NotBlank(message = "Описание фильма не может быть пустым")
+    //@NotBlank(message = "Описание фильма не может быть пустым")
     private String description;
 
     @BeforeDate
@@ -34,14 +31,16 @@ public class Film {
     @Positive
     private Integer duration;
 
-    @NonNull
+    //@NonNull
     private Mpa mpa;
 
     @Builder.Default
     private List<Director> directors = new ArrayList<>();
 
+    @Builder.Default
     private List<Genre> genres = new ArrayList<>();
 
+    @Builder.Default
     private List<Long> likes = new ArrayList<>();
 
 }
