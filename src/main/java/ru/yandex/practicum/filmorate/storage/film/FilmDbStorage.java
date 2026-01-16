@@ -146,14 +146,16 @@ public class FilmDbStorage implements FilmStorage {
         });
 
         // Режиссеры
-        jdbcTemplate.query("SELECT fd.film_id, d.director_id, d.director_name FROM directors d " +
-                "JOIN film_director fd ON d.director_id = fd.director_id WHERE fd.film_id IN (" + ids + ")", rs -> {
+        jdbcTemplate.query("SELECT fd.film_id, d.id, d.name " +
+                "FROM directors d " +
+                "JOIN film_director fd ON d.id = fd.director_id " +
+                "WHERE fd.film_id IN (" + ids + ")", rs -> {
             Film f = filmMap.get(rs.getLong("film_id"));
             if (f != null) {
-                if (f.getDirectors() == null) f.setDirectors(new ArrayList<>());
                 f.getDirectors().add(Director.builder()
-                        .id(rs.getLong("director_id"))
-                        .name(rs.getString("director_name")).build());
+                        .id(rs.getLong("id"))
+                        .name(rs.getString("name"))
+                        .build());
             }
         });
 
@@ -202,43 +204,60 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Director> findDirectors() {
-        return jdbcTemplate.query("SELECT * FROM directors", (rs, n) ->
-                Director.builder().id(rs.getLong("director_id")).name(rs.getString("director_name")).build());
+        return jdbcTemplate.query("SELECT id, name FROM directors", (rs, n) ->
+                Director.builder()
+                        .id(rs.getLong("id"))
+                        .name(rs.getString("name"))
+                        .build());
     }
 
     @Override
     public Director findDirectorById(Long id) {
+        log.info("Запрос режиссера из БД по id={}", id);
+        String sql = "SELECT id, name FROM directors WHERE id = ?";
         try {
-            return jdbcTemplate.queryForObject("SELECT * FROM directors WHERE director_id = ?",
-                    (rs, n) -> Director.builder().id(rs.getLong("director_id")).name(rs.getString("director_name")).build(), id);
+            return jdbcTemplate.queryForObject(sql, (rs, n) -> Director.builder()
+                    .id(rs.getLong("id"))
+                    .name(rs.getString("name"))
+                    .build(), id);
         } catch (EmptyResultDataAccessException e) {
-            throw new NotFoundException("Режиссёр не найден");
+            log.error("Режиссер с id={} не найден", id);
+            throw new NotFoundException("Режиссёр с id=" + id + " не найден");
         }
     }
 
     @Override
     public Director createDirector(Director director) {
+        log.info("Добавление режиссера в БД: {}", director.getName());
+        String sql = "INSERT INTO directors (name) VALUES (?)";
         KeyHolder kh = new GeneratedKeyHolder();
+
         jdbcTemplate.update(con -> {
-            PreparedStatement ps = con.prepareStatement("INSERT INTO directors (director_name) VALUES (?)", new String[]{"director_id"});
+            PreparedStatement ps = con.prepareStatement(sql, new String[]{"id"});
             ps.setString(1, director.getName());
             return ps;
         }, kh);
+
         director.setId(kh.getKey().longValue());
         return director;
     }
 
     @Override
     public Director updateDirector(Director director) {
-        int rows = jdbcTemplate.update("UPDATE directors SET director_name = ? WHERE director_id = ?",
-                director.getName(), director.getId());
-        if (rows == 0) throw new NotFoundException("Режиссёр не найден");
+        log.info("Обновление режиссера в БД с id={}", director.getId());
+        String sql = "UPDATE directors SET name = ? WHERE id = ?";
+        int rows = jdbcTemplate.update(sql, director.getName(), director.getId());
+
+        if (rows == 0) {
+            throw new NotFoundException("Режиссёр с id=" + director.getId() + " не найден");
+        }
         return director;
     }
 
     @Override
     public boolean deleteDirectorById(Long id) {
-        return jdbcTemplate.update("DELETE FROM directors WHERE director_id = ?", id) > 0;
+        log.info("Удаление режиссера с id={}", id);
+        return jdbcTemplate.update("DELETE FROM directors WHERE id = ?", id) > 0;
     }
 
     @Override
