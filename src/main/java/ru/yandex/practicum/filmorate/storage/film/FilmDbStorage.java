@@ -69,11 +69,15 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film getFilm(Long filmId) {
-        String sql = "SELECT f.*, mr.name AS mpa_name FROM films f " +
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
+                "FROM films f " +
                 "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id WHERE f.id = ?";
         try {
             Film film = jdbcTemplate.queryForObject(sql, mapper, filmId);
-            if (film != null) loadDataForFilms(List.of(film));
+            if (film != null) {
+                loadDataForFilms(List.of(film));
+            }
             return film;
         } catch (EmptyResultDataAccessException e) {
             throw new NotFoundException("Фильм с id=" + filmId + " не найден");
@@ -82,7 +86,9 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getAllFilms() {
-        String sql = "SELECT f.*, mr.name AS mpa_name FROM films f " +
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
+                "FROM films f " +
                 "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id";
         List<Film> films = jdbcTemplate.query(sql, mapper);
         loadDataForFilms(films);
@@ -91,7 +97,9 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getPopularFilms(Long count) {
-        String sql = "SELECT f.*, mr.name AS mpa_name FROM films f " +
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
+                "FROM films f " +
                 "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
                 "LEFT JOIN likes l ON f.id = l.film_id " +
                 "GROUP BY f.id, mr.name ORDER BY COUNT(l.user_id) DESC LIMIT ?";
@@ -105,13 +113,17 @@ public class FilmDbStorage implements FilmStorage {
         findDirectorById(directorId);
         String sql;
         if ("likes".equalsIgnoreCase(sortBy)) {
-            sql = "SELECT f.*, mr.name AS mpa_name FROM films f " +
+            sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                    "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
+                    "FROM films f " +
                     "JOIN film_director fd ON f.id = fd.film_id " +
                     "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
                     "LEFT JOIN likes l ON f.id = l.film_id " +
                     "WHERE fd.director_id = ? GROUP BY f.id, mr.name ORDER BY COUNT(l.user_id) DESC";
         } else {
-            sql = "SELECT f.*, mr.name AS mpa_name FROM films f " +
+            sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                    "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
+                    "FROM films f " +
                     "JOIN film_director fd ON f.id = fd.film_id " +
                     "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
                     "WHERE fd.director_id = ? ORDER BY f.release_date ASC";
