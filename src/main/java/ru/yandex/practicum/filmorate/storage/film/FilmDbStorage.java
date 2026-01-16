@@ -177,9 +177,11 @@ public class FilmDbStorage implements FilmStorage {
                             ps.setLong(1, film.getId());
                             ps.setLong(2, genres.get(i).getId());
                         }
+
                         public int getBatchSize() {
                             return genres.size();
                         }
+
                     });
         }
     }
@@ -194,9 +196,11 @@ public class FilmDbStorage implements FilmStorage {
                             ps.setLong(1, film.getId());
                             ps.setLong(2, directors.get(i).getId());
                         }
+
                         public int getBatchSize() {
                             return directors.size();
                         }
+
                     });
         }
     }
