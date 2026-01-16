@@ -39,7 +39,7 @@ class FilmDbStorageTest {
                 .releaseDate(LocalDate.of(2010, 7, 16))
                 .duration(148)
                 .mpa(mpa)
-                .director(List.of(createdDirector))
+                .directors(List.of(createdDirector))
                 .build();
 
         Film createdFilm = filmStorage.createFilm(film);
@@ -48,8 +48,8 @@ class FilmDbStorageTest {
 
         assertThat(savedFilm).isNotNull();
         assertThat(savedFilm.getName()).isEqualTo("Inception");
-        assertThat(savedFilm.getDirector()).hasSize(1);
-        assertThat(savedFilm.getDirector().get(0).getName()).isEqualTo("Christopher Nolan");
+        assertThat(savedFilm.getDirectors()).hasSize(1);
+        assertThat(savedFilm.getDirectors().get(0).getName()).isEqualTo("Christopher Nolan");
     }
 
     @Test
@@ -81,7 +81,7 @@ class FilmDbStorageTest {
                 .releaseDate(LocalDate.of(2020, 1, 1))
                 .duration(100)
                 .mpa(mpa)
-                .director(List.of(director))
+                .directors(List.of(director))
                 .build();
 
         Film film2 = Film.builder()
@@ -90,7 +90,7 @@ class FilmDbStorageTest {
                 .releaseDate(LocalDate.of(2010, 1, 1))
                 .duration(100)
                 .mpa(mpa)
-                .director(List.of(director))
+                .directors(List.of(director))
                 .build();
 
         filmStorage.createFilm(film1);
