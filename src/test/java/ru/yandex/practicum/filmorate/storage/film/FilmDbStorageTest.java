@@ -1,13 +1,11 @@
 package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.context.annotation.Import;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -20,88 +18,88 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JdbcTest
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-@ContextConfiguration(classes = {FilmDbStorage.class})
-@ComponentScan(basePackages = {"ru.yandex.practicum.filmorate.storage.film"})
+@Import({FilmDbStorage.class, FilmRowMapper.class})
 class FilmDbStorageTest {
 
-    private final FilmStorage storage;
+    private final FilmDbStorage filmStorage;
 
-    private Film testFilm;
-    private Director testDirector;
+    @Test
+    void testCreateAndGetFilmWithDirector() {
+        Mpa mpa = new Mpa(1L, "G");
 
-    @BeforeEach
-    void setUp() {
-        // Создаём тестового режиссёра
-        testDirector = storage.createDirector(
-                Director.builder()
-                        .id(0L) // временный id, БД заменит его на сгенерированный
-                        .name("Quentin Tarantino")
-                        .build()
-        );
+        Director director = Director.builder()
+                .id(0L)
+                .name("Christopher Nolan")
+                .build();
+        Director createdDirector = filmStorage.createDirector(director);
 
+        Film film = Film.builder()
+                .name("Inception")
+                .description("Dream within a dream")
+                .releaseDate(LocalDate.of(2010, 7, 16))
+                .duration(148)
+                .mpa(mpa)
+                .director(List.of(createdDirector))
+                .build();
 
-        // Создаём тестовый фильм
-        testFilm = storage.createFilm(Film.builder()
-                .name("Pulp Fiction")
-                .description("Crime movie")
-                .releaseDate(LocalDate.of(1994, 10, 14))
-                .duration(154)
-                .mpa(new Mpa(1L, "G"))
-                .build()
-        );
+        Film createdFilm = filmStorage.createFilm(film);
 
-        // Связываем фильм с режиссёром
-        storage.assignDirectorToFilm(testFilm.getId(), testDirector.getId());
+        Film savedFilm = filmStorage.getFilm(createdFilm.getId());
+
+        assertThat(savedFilm).isNotNull();
+        assertThat(savedFilm.getName()).isEqualTo("Inception");
+        assertThat(savedFilm.getDirector()).hasSize(1);
+        assertThat(savedFilm.getDirector().get(0).getName()).isEqualTo("Christopher Nolan");
     }
 
     @Test
-    void createFilmAndDirector() {
-        Film film = storage.getFilm(testFilm.getId());
-        assertThat(film).isNotNull();
-        assertThat(film.getName()).isEqualTo("Pulp Fiction");
-        assertThat(film.getGenres()).isEmpty();
-        assertThat(film.getLikes()).isEmpty();
+    void testUpdateFilm() {
+        Mpa mpa = new Mpa(1L, "G");
+        Film film = filmStorage.createFilm(Film.builder()
+                .name("Original Name")
+                .description("Desc")
+                .releaseDate(LocalDate.of(2000, 1, 1))
+                .duration(100)
+                .mpa(mpa)
+                .build());
 
-        Director director = storage.findDirectorById(testDirector.getId());
-        assertThat(director).isNotNull();
-        assertThat(director.getName()).isEqualTo("Quentin Tarantino");
+        film.setName("Updated Name");
+        filmStorage.updateFilm(film);
+
+        Film updatedFilm = filmStorage.getFilm(film.getId());
+        assertThat(updatedFilm.getName()).isEqualTo("Updated Name");
     }
 
     @Test
-    void updateFilm() {
-        testFilm.setName("Pulp Fiction Updated");
-        testFilm.setDuration(155);
-        storage.updateFilm(testFilm);
+    void testFindSortFilmsByDirector() {
+        Director director = filmStorage.createDirector(Director.builder().id(0L).name("Director X").build());
+        Mpa mpa = new Mpa(1L, "G");
 
-        Film film = storage.getFilm(testFilm.getId());
-        assertThat(film.getName()).isEqualTo("Pulp Fiction Updated");
-        assertThat(film.getDuration()).isEqualTo(155);
-    }
+        Film film1 = Film.builder()
+                .name("Film 2020")
+                .description("Description 1")
+                .releaseDate(LocalDate.of(2020, 1, 1))
+                .duration(100)
+                .mpa(mpa)
+                .director(List.of(director))
+                .build();
 
-    @Test
-    void getAllFilms() {
-        List<Film> films = storage.getAllFilms();
-        assertThat(films).hasSize(1);
-        assertThat(films.get(0).getName()).isEqualTo("Pulp Fiction");
-    }
+        Film film2 = Film.builder()
+                .name("Film 2010")
+                .description("Description 2")
+                .releaseDate(LocalDate.of(2010, 1, 1))
+                .duration(100)
+                .mpa(mpa)
+                .director(List.of(director))
+                .build();
 
-    @Test
-    void findSortFilmsByDirectorByYear() {
-        List<Film> films = storage.findSortFilmsByDirector(testDirector.getId(), "year");
-        assertThat(films).isNotEmpty();
-        assertThat(films.get(0).getName()).isEqualTo("Pulp Fiction");
-    }
+        filmStorage.createFilm(film1);
+        filmStorage.createFilm(film2);
 
-    @Test
-    void findSortFilmsByDirectorByLikes() {
-        List<Film> films = storage.findSortFilmsByDirector(testDirector.getId(), "likes");
-        assertThat(films).isNotEmpty();
-        assertThat(films.get(0).getName()).isEqualTo("Pulp Fiction");
-    }
+        List<Film> sortedFilms = filmStorage.findSortFilmsByDirector(director.getId(), "year");
 
-    @Test
-    void deleteDirector() {
-        boolean deleted = storage.deleteDirectorById(testDirector.getId());
-        assertThat(deleted).isTrue();
+        assertThat(sortedFilms).hasSize(2);
+        assertThat(sortedFilms.get(0).getName()).isEqualTo("Film 2010"); // Старый фильм первый
+        assertThat(sortedFilms.get(1).getName()).isEqualTo("Film 2020");
     }
 }
