@@ -207,7 +207,7 @@ public class FilmDbStorage implements FilmStorage {
     private void updateDirectorsForFilm(Film film) {
         jdbcTemplate.update("DELETE FROM film_director WHERE film_id = ?", film.getId());
 
-        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
+        if (film.getDirectors() == null) {
             return;
         }
 
