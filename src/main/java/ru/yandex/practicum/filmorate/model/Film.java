@@ -34,13 +34,10 @@ public class Film {
     //@NonNull
     private Mpa mpa;
 
-    @Builder.Default
     private List<Director> directors = new ArrayList<>();
 
-    @Builder.Default
     private List<Genre> genres = new ArrayList<>();
 
-    @Builder.Default
     private List<Long> likes = new ArrayList<>();
 
 }

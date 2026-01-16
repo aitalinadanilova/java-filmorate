@@ -206,22 +206,24 @@ public class FilmDbStorage implements FilmStorage {
 
     private void updateDirectorsForFilm(Film film) {
         jdbcTemplate.update("DELETE FROM film_director WHERE film_id = ?", film.getId());
-        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
-            List<Director> directors = new ArrayList<>(new LinkedHashSet<>(film.getDirectors()));
-            jdbcTemplate.batchUpdate("INSERT INTO film_director (film_id, director_id) VALUES (?, ?)",
-                    new BatchPreparedStatementSetter() {
-                        @Override
-                        public void setValues(PreparedStatement ps, int i) throws SQLException {
-                            ps.setLong(1, film.getId());
-                            ps.setLong(2, directors.get(i).getId());
-                        }
 
-                        @Override
-                        public int getBatchSize() {
-                            return directors.size();
-                        }
-                    });
+        if (film.getDirectors() == null || film.getDirectors().isEmpty()) {
+            return;
         }
+
+        List<Director> directors = new ArrayList<>(new LinkedHashSet<>(film.getDirectors()));
+        jdbcTemplate.batchUpdate("INSERT INTO film_director (film_id, director_id) VALUES (?, ?)",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setLong(1, film.getId());
+                        ps.setLong(2, directors.get(i).getId());
+                    }
+                    @Override
+                    public int getBatchSize() {
+                        return directors.size();
+                    }
+                });
     }
 
     @Override

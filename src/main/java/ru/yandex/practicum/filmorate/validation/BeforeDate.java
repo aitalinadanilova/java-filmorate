@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = BeforeDateValidation.class)
-@Past
+//@Past
 public @interface BeforeDate {
     String message() default "Дата релиза фильма не может быть раньше чем {value}}";
     Class<?>[] groups() default {};
