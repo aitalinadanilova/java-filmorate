@@ -20,7 +20,7 @@ public interface FilmStorage {
 
     List<User> getLikes(Long filmId);
 
-    List<Film> getPopularFilms(Long count);
+    List<Film> getPopularFilms(Long count, Long genreId, Integer year);
 
     boolean checkLikeOnFilm(Long filmId, Long userId);
 }
