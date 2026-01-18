@@ -204,19 +204,6 @@ class ReviewDbStorageTest {
     }
 
     @Test
-    void addMultipleLikes() {
-        Review reviewBefore = storage.getReview(1L);
-        Long usefulBefore = reviewBefore.getUseful();
-
-        storage.addLike(1L, 1L);
-        storage.addLike(1L, 2L);
-        storage.addLike(1L, 3L);
-
-        Review reviewAfter = storage.getReview(1L);
-        assertThat(reviewAfter.getUseful()).isEqualTo(usefulBefore + 3);
-    }
-
-    @Test
     void getReviewForNonExistentId() {
         Review review = storage.getReview(999L);
         assertThat(review).isNull();

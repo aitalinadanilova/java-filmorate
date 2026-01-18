@@ -78,8 +78,8 @@ public class ReviewServiceImpl implements ReviewService {
             throw new NotFoundException("Пользователь отсутствует");
         }
 
-        reviewStorage.addLike(reviewId, userId);
         reviewStorage.checkLikeOnReview(reviewId, userId);
+        reviewStorage.addLike(reviewId, userId);
     }
 
     @Override
