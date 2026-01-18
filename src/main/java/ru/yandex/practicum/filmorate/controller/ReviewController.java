@@ -5,10 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Review;
-
 import ru.yandex.practicum.filmorate.service.review.ReviewService;
+
 import java.util.Collection;
-import java.util.List;
 
 @RestController
 @RequestMapping("/reviews")
@@ -43,7 +42,9 @@ public class ReviewController {
     }
 
     @PutMapping("/{reviewId}/dislike/{userId}")
-    public void removeLike(@PathVariable Long reviewId, Long userId) { service.removeLike(reviewId, userId);}
+    public void removeLike(@PathVariable Long reviewId, Long userId) {
+        service.removeLike(reviewId, userId);
+    }
 
     @DeleteMapping("/{reviewId}/{userId}")
     public void removeReview(@PathVariable Long reviewId, @PathVariable Long userId) {

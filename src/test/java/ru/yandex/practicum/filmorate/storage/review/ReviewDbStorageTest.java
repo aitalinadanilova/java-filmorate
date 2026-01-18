@@ -35,7 +35,6 @@ class ReviewDbStorageTest {
         jdbcTemplate.update("DELETE FROM users");
         jdbcTemplate.update("DELETE FROM rating_mpa");
 
-        // Сбрасываем AUTO_INCREMENT счётчики
         jdbcTemplate.update("ALTER TABLE reviews ALTER COLUMN id RESTART WITH 1");
         jdbcTemplate.update("ALTER TABLE users ALTER COLUMN id RESTART WITH 1");
         jdbcTemplate.update("ALTER TABLE films ALTER COLUMN id RESTART WITH 1");

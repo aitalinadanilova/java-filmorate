@@ -10,8 +10,8 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.PreparedStatement;
 import java.util.List;
@@ -74,9 +74,9 @@ public class ReviewDbStorage implements ReviewStorage {
     public List<Review> getAllReviews() {
         return jdbcTemplate.query(
                 """
-                SELECT * FROM reviews
-                ORDER BY useful DESC
-                """,
+                        SELECT * FROM reviews
+                        ORDER BY useful DESC
+                        """,
                 mapper
         );
     }
@@ -85,11 +85,11 @@ public class ReviewDbStorage implements ReviewStorage {
     public List<Review> getReviewsByFilm(Long filmId, int count) {
         return jdbcTemplate.query(
                 """
-                SELECT * FROM reviews
-                WHERE film_id = ?
-                ORDER BY useful DESC
-                LIMIT ?
-                """,
+                        SELECT * FROM reviews
+                        WHERE film_id = ?
+                        ORDER BY useful DESC
+                        LIMIT ?
+                        """,
                 mapper,
                 filmId,
                 count
@@ -104,7 +104,7 @@ public class ReviewDbStorage implements ReviewStorage {
     @Override
     public List<User> getLikes(Long reviewId) {
         try {
-            return jdbcTemplate.query("SELECT * FROM users WHERE id IN (SELECT user_id FROM review_likes WHERE review_id = ?)",new DataClassRowMapper<>(User.class), reviewId);
+            return jdbcTemplate.query("SELECT * FROM users WHERE id IN (SELECT user_id FROM review_likes WHERE review_id = ?)", new DataClassRowMapper<>(User.class), reviewId);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }

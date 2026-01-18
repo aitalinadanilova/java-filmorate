@@ -15,7 +15,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class ReviewServiceImpl implements ReviewService{
+public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewStorage reviewStorage;
     private final UserStorage userStorage;
@@ -24,7 +24,7 @@ public class ReviewServiceImpl implements ReviewService{
     @Override
     public Review createReview(Review review) {
         log.info("Отзыв {} создан", review);
-        if(review.getContent().isEmpty()){
+        if (review.getContent().isEmpty()) {
             throw new NotFoundException("Отзыв не может пустым");
         }
 
