@@ -41,7 +41,7 @@ public class ReviewController {
         service.addLike(reviewId, userId);
     }
 
-    @PutMapping("/{reviewId}/dislike/{userId}")
+    @DeleteMapping("/{reviewId}/like/{userId}")
     public void removeLike(@PathVariable Long reviewId, Long userId) {
         service.removeLike(reviewId, userId);
     }
