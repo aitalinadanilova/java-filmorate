@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.DataClassRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -99,21 +100,6 @@ public class FilmDbStorage implements FilmStorage {
                 "FROM films f " +
                 "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id";
         List<Film> films = jdbcTemplate.query(sql, mapper);
-        loadDataForFilms(films);
-        return films;
-    }
-
-    @Override
-    public List<Film> getPopularFilms(Long count) {
-        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
-                "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
-                "FROM films f " +
-                "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
-                "LEFT JOIN likes l ON f.id = l.film_id " +
-                "GROUP BY f.id, mr.name " +
-                "ORDER BY COUNT(l.user_id) DESC " +
-                "LIMIT ?";
-        List<Film> films = jdbcTemplate.query(sql, mapper, count);
         loadDataForFilms(films);
         return films;
     }
@@ -239,7 +225,6 @@ public class FilmDbStorage implements FilmStorage {
         try {
             return jdbcTemplate.queryForObject("SELECT * FROM directors WHERE id = ?",
                     (rs, n) -> Director.builder().id(rs.getLong("id")).name(rs.getString("name")).build(), id);
-            return jdbcTemplate.query("SELECT * FROM users WHERE id IN (SELECT user_id FROM likes WHERE film_id = ?)", new DataClassRowMapper<>(User.class), filmId);
         } catch (EmptyResultDataAccessException e) {
             throw new NotFoundException("Режиссёр с id=" + id + " не найден");
         }
@@ -256,6 +241,9 @@ public class FilmDbStorage implements FilmStorage {
         }, kh);
         director.setId(kh.getKey().longValue());
         return director;
+    }
+
+    @Override
     public List<Film> getPopularFilms(Long count, Long genreId, Integer year) {
         // Базовая часть запроса. Постоянна
         StringBuilder sql = new StringBuilder(
@@ -307,6 +295,7 @@ public class FilmDbStorage implements FilmStorage {
                 params.toArray());
     }
 
+
     @Override
     public Director updateDirector(Director director) {
         int rows = jdbcTemplate.update("UPDATE directors SET name = ? WHERE id = ?",
@@ -347,10 +336,7 @@ public class FilmDbStorage implements FilmStorage {
             return Collections.emptyList();
         }
 
-        // Создаем строку с плейсхолдерами для IN-условия
-        String inClause = filmIds.stream()
-                .map(id -> "?")
-                .collect(Collectors.joining(","));
+        String inClause = String.join(",", Collections.nCopies(filmIds.size(), "?"));
 
         String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
                 "mr.id AS mpa_id, mr.name AS mpa_name " +
@@ -360,12 +346,44 @@ public class FilmDbStorage implements FilmStorage {
 
         List<Film> films = jdbcTemplate.query(sql, mapper, filmIds.toArray());
 
-        for (Film film : films) {
-            film.setGenres(getGenresByFilmId(film.getId()));
-            film.setLikes(getLikesByFilmId(film.getId()));
-        }
+        loadDataForFilms(films);
 
         return films;
     }
 
+    @Override
+    public List<Film> searchFilms(String query, boolean byTitle, boolean byDirector) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                        "mr.id AS mpa_id, mr.name AS mpa_name " +
+                        "FROM films f " +
+                        "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
+                        "LEFT JOIN film_director fd ON f.id = fd.film_id " +
+                        "LEFT JOIN directors d ON fd.director_id = d.id " +
+                        "LEFT JOIN likes l ON f.id = l.film_id " +
+                        "WHERE "
+        );
+
+        List<String> conditions = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+        String searchPattern = "%" + query.toLowerCase() + "%";
+
+        if (byTitle) {
+            conditions.add("LOWER(f.name) LIKE ?");
+            params.add(searchPattern);
+        }
+        if (byDirector) {
+            conditions.add("LOWER(d.name) LIKE ?");
+            params.add(searchPattern);
+        }
+
+        if (conditions.isEmpty()) return Collections.emptyList();
+
+        sql.append(String.join(" OR ", conditions));
+        sql.append(" GROUP BY f.id, mr.name ORDER BY COUNT(l.user_id) DESC");
+
+        List<Film> films = jdbcTemplate.query(sql.toString(), mapper, params.toArray());
+        loadDataForFilms(films);
+        return films;
+    }
 }

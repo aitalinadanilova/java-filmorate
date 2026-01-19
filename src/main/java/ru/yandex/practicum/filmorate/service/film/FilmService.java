@@ -19,8 +19,6 @@ public interface FilmService {
 
     void removeLikeToFilm(Long filmId, Long userId);
 
-    List<Film> getPopularFilms(Long count);
-
     List<Director> findDirectors();
 
     Director findDirectorById(Long id);
@@ -34,4 +32,6 @@ public interface FilmService {
     List<Film> findSortFilmsByDirector(Long directorId, String sortBy);
 
     List<Film> getPopularFilms(Long count, Long  genreId, Integer year);
+
+    List<Film> searchFilms(String query, String by);
 }
