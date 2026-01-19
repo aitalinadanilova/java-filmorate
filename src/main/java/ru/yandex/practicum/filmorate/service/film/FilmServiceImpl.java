@@ -139,4 +139,17 @@ public class FilmServiceImpl implements FilmService {
             throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
     }
+
+    public List<Film> searchFilms(String query, String by) {
+        String[] searchParams = by.split(",");
+        boolean searchByTitle = false;
+        boolean searchByDirector = false;
+
+        for (String param : searchParams) {
+            if (param.equalsIgnoreCase("title")) searchByTitle = true;
+            if (param.equalsIgnoreCase("director")) searchByDirector = true;
+        }
+
+        return filmStorage.searchFilms(query, searchByTitle, searchByDirector);
+    }
 }

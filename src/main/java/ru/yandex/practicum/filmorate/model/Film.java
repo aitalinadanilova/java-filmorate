@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-//import org.springframework.validation.annotation.Validated;
 import ru.yandex.practicum.filmorate.validation.BeforeDate;
 
 import java.time.LocalDate;
@@ -22,7 +21,7 @@ public class Film {
     private String name;
 
     @Size(max = 200)
-    //@NotBlank(message = "Описание фильма не может быть пустым")
+    @NotBlank(message = "Описание фильма не может быть пустым")
     private String description;
 
     @BeforeDate
@@ -31,7 +30,7 @@ public class Film {
     @Positive
     private Integer duration;
 
-    //@NonNull
+    @NonNull
     private Mpa mpa;
 
     private List<Director> directors = new ArrayList<>();
