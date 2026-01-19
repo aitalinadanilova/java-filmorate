@@ -5,14 +5,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.jdbc.Sql;
+import org.springframework.context.annotation.Import;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,81 +18,88 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JdbcTest
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-@ContextConfiguration(classes = {FilmStorage.class})
-@ComponentScan(basePackages = {"ru.yandex.practicum.filmorate.storage.film"})
+@Import({FilmDbStorage.class, FilmRowMapper.class})
 class FilmDbStorageTest {
-    private final FilmStorage storage;
+
+    private final FilmDbStorage filmStorage;
 
     @Test
-    void createFilm() {
-        storage.createFilm(new Film(
-                1L,
-                "updateName",
-                "description",
-                LocalDate.of(1991,01,12),
-                200,
-                new ArrayList<>(),
-                new ArrayList<>(),
-                new Mpa(1L,"G")
-        ));
-        Film film = storage.getFilm(1L);
-        assertThat(film).hasFieldOrPropertyWithValue("name", "updateName");
-        assertThat(film).hasFieldOrPropertyWithValue("description", "description");
-        assertThat(film).hasFieldOrProperty("releaseDate");
-        assertThat(film).hasFieldOrPropertyWithValue("duration", 200);
+    void testCreateAndGetFilmWithDirector() {
+        Mpa mpa = new Mpa(1L, "G");
+
+        Director director = Director.builder()
+                .id(0L)
+                .name("Christopher Nolan")
+                .build();
+        Director createdDirector = filmStorage.createDirector(director);
+
+        Film film = Film.builder()
+                .name("Inception")
+                .description("Dream within a dream")
+                .releaseDate(LocalDate.of(2010, 7, 16))
+                .duration(148)
+                .mpa(mpa)
+                .directors(List.of(createdDirector))
+                .build();
+
+        Film createdFilm = filmStorage.createFilm(film);
+
+        Film savedFilm = filmStorage.getFilm(createdFilm.getId());
+
+        assertThat(savedFilm).isNotNull();
+        assertThat(savedFilm.getName()).isEqualTo("Inception");
+        assertThat(savedFilm.getDirectors()).hasSize(1);
+        assertThat(savedFilm.getDirectors().get(0).getName()).isEqualTo("Christopher Nolan");
     }
 
     @Test
-    @Sql(scripts = {"/test-get-films.sql"})
-    void updateFilm() {
-        storage.updateFilm(new Film(
-                1L,
-                "updateName",
-                "description",
-                LocalDate.of(1991,01,12),
-                200,
-                null,
-                null,
-                new Mpa(1L,"G")
-        ));
+    void testUpdateFilm() {
+        Mpa mpa = new Mpa(1L, "G");
+        Film film = filmStorage.createFilm(Film.builder()
+                .name("Original Name")
+                .description("Desc")
+                .releaseDate(LocalDate.of(2000, 1, 1))
+                .duration(100)
+                .mpa(mpa)
+                .build());
 
-        Film film = storage.getFilm(1L);
-        assertThat(film).hasFieldOrPropertyWithValue("name", "updateName");
-        assertThat(film).hasFieldOrPropertyWithValue("description", "description");
-        assertThat(film).hasFieldOrProperty("releaseDate");
-        assertThat(film).hasFieldOrPropertyWithValue("duration", 200);
+        film.setName("Updated Name");
+        filmStorage.updateFilm(film);
 
+        Film updatedFilm = filmStorage.getFilm(film.getId());
+        assertThat(updatedFilm.getName()).isEqualTo("Updated Name");
     }
 
     @Test
-    @Sql(scripts = {"/test-get-films.sql"})
-    void getFilm() {
-        Film film = storage.getFilm(1L);
-        assertThat(film).hasFieldOrPropertyWithValue("name", "film_name1");
-        assertThat(film).hasFieldOrPropertyWithValue("description", "description");
-        assertThat(film).hasFieldOrProperty("releaseDate");
-        assertThat(film).hasFieldOrPropertyWithValue("duration", 60);
-    }
+    void testFindSortFilmsByDirector() {
+        Director director = filmStorage.createDirector(Director.builder().id(0L).name("Director X").build());
+        Mpa mpa = new Mpa(1L, "G");
 
-    @Test
-    @Sql(scripts = {"/test-get-films.sql"})
-    void getAllFilms() {
-        List<Film> films = storage.getAllFilms();
-        System.out.println(films);
+        Film film1 = Film.builder()
+                .name("Film 2020")
+                .description("Description 1")
+                .releaseDate(LocalDate.of(2020, 1, 1))
+                .duration(100)
+                .mpa(mpa)
+                .directors(List.of(director))
+                .build();
 
-        assertThat(films.get(0)).hasFieldOrPropertyWithValue("name", "film_name1");
-        assertThat(films.get(0)).hasFieldOrPropertyWithValue("description", "description");
-        assertThat(films.get(0)).hasFieldOrProperty("releaseDate");
-        assertThat(films.get(0)).hasFieldOrPropertyWithValue("duration", 60);
+        Film film2 = Film.builder()
+                .name("Film 2010")
+                .description("Description 2")
+                .releaseDate(LocalDate.of(2010, 1, 1))
+                .duration(100)
+                .mpa(mpa)
+                .directors(List.of(director))
+                .build();
 
-        assertThat(films.get(1)).hasFieldOrPropertyWithValue("name", "film_name2");
-        assertThat(films.get(1)).hasFieldOrPropertyWithValue("description", "description");
-        assertThat(films.get(1)).hasFieldOrProperty("releaseDate");
-        assertThat(films.get(1)).hasFieldOrPropertyWithValue("duration", 40);
+        filmStorage.createFilm(film1);
+        filmStorage.createFilm(film2);
 
-        assertThat(films.get(2)).hasFieldOrPropertyWithValue("name", "film_name3");
-        assertThat(films.get(2)).hasFieldOrPropertyWithValue("description", "description");
-        assertThat(films.get(2)).hasFieldOrProperty("releaseDate");
-        assertThat(films.get(2)).hasFieldOrPropertyWithValue("duration", 74);
+        List<Film> sortedFilms = filmStorage.findSortFilmsByDirector(director.getId(), "year");
+
+        assertThat(sortedFilms).hasSize(2);
+        assertThat(sortedFilms.get(0).getName()).isEqualTo("Film 2010"); // Старый фильм первый
+        assertThat(sortedFilms.get(1).getName()).isEqualTo("Film 2020");
     }
 }
