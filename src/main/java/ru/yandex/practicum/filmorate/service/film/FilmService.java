@@ -33,4 +33,5 @@ public interface FilmService {
 
     List<Film> findSortFilmsByDirector(Long directorId, String sortBy);
 
+    List<Film> getPopularFilms(Long count, Long  genreId, Integer year);
 }

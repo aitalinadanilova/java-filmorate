@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -238,6 +239,7 @@ public class FilmDbStorage implements FilmStorage {
         try {
             return jdbcTemplate.queryForObject("SELECT * FROM directors WHERE id = ?",
                     (rs, n) -> Director.builder().id(rs.getLong("id")).name(rs.getString("name")).build(), id);
+            return jdbcTemplate.query("SELECT * FROM users WHERE id IN (SELECT user_id FROM likes WHERE film_id = ?)", new DataClassRowMapper<>(User.class), filmId);
         } catch (EmptyResultDataAccessException e) {
             throw new NotFoundException("Режиссёр с id=" + id + " не найден");
         }
@@ -254,6 +256,55 @@ public class FilmDbStorage implements FilmStorage {
         }, kh);
         director.setId(kh.getKey().longValue());
         return director;
+    public List<Film> getPopularFilms(Long count, Long genreId, Integer year) {
+        // Базовая часть запроса. Постоянна
+        StringBuilder sql = new StringBuilder(
+                "SELECT f.ID, f.NAME, COUNT(l.USER_ID) as cnt_like " +
+                        "FROM FILMS f " +
+                        "LEFT JOIN likes l ON l.film_id = f.id "
+        );
+
+        // Список параметров
+        List<Object> params = new ArrayList<>();
+
+        // Условия для фильтрации WHERE
+        List<String> conditions = new ArrayList<>();
+
+        // Если жанр передан - добавляется JOIN и условие фильтрации
+        if (genreId != null) {
+            sql.append("JOIN films_genre fg ON f.id = fg.film_id ");
+            conditions.add("fg.genre_id = ?");
+            params.add(genreId);
+        }
+
+        // Если год передан - добавляется JOIN и условие фильтрации
+        if (year != null) {
+            conditions.add("EXTRACT(YEAR FROM f.release_date) = ?");
+            params.add(year);
+        }
+
+        // Если хотя бы один фильтр передан - добавляется WHERE
+        if (!conditions.isEmpty()) {
+            sql.append("WHERE ")
+                    .append(String.join(" AND ", conditions))
+                    .append(" ");
+        }
+
+        // Добавляется группировка и сортировка по количеству лайков + ограничение кол-ва
+        sql.append(
+                "GROUP BY f.ID, f.NAME " +
+                        "ORDER BY cnt_like DESC " +
+                        "LIMIT ? "
+        );
+
+        // LIMIT - последний параметр
+        params.add(count);
+
+
+        return jdbcTemplate.query(
+                sql.toString(),
+                new DataClassRowMapper<>(Film.class),
+                params.toArray());
     }
 
     @Override
@@ -288,6 +339,33 @@ public class FilmDbStorage implements FilmStorage {
                 .id(rs.getLong("id"))
                 .email(rs.getString("email"))
                 .build(), filmId);
+    }
+
+    @Override
+    public List<Film> getFilmsByIds(List<Long> filmIds) {
+        if (filmIds == null || filmIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Создаем строку с плейсхолдерами для IN-условия
+        String inClause = filmIds.stream()
+                .map(id -> "?")
+                .collect(Collectors.joining(","));
+
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                "mr.id AS mpa_id, mr.name AS mpa_name " +
+                "FROM films f " +
+                "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
+                "WHERE f.id IN (" + inClause + ")";
+
+        List<Film> films = jdbcTemplate.query(sql, mapper, filmIds.toArray());
+
+        for (Film film : films) {
+            film.setGenres(getGenresByFilmId(film.getId()));
+            film.setLikes(getLikesByFilmId(film.getId()));
+        }
+
+        return films;
     }
 
 }

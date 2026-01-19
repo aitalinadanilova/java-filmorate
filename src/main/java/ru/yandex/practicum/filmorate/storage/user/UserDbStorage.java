@@ -109,4 +109,10 @@ public class UserDbStorage implements UserStorage {
 
     }
 
+    @Override
+    public List<Long> getLikedFilms(Long userId) {
+        String sql = "SELECT film_id FROM likes WHERE user_id = ?";
+        return jdbcTemplate.queryForList(sql, Long.class, userId);
+    }
+
 }

@@ -36,4 +36,9 @@ public interface FilmStorage {
 
     List<Film> findSortFilmsByDirector(Long directorId, String sortBy);
 
+    List<Film> getPopularFilms(Long count, Long genreId, Integer year);
+
+    boolean checkLikeOnFilm(Long filmId, Long userId);
+
+    List<Film> getFilmsByIds(List<Long> filmIds);
 }
