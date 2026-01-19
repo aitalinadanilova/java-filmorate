@@ -17,6 +17,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Component
@@ -183,6 +184,33 @@ public class FilmDbStorage implements FilmStorage {
             throw new ValidationException("Пользователь с id = " + userId + " уже поставил лайк");
         }
         return true;
+    }
+
+    @Override
+    public List<Film> getFilmsByIds(List<Long> filmIds) {
+        if (filmIds == null || filmIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Создаем строку с плейсхолдерами для IN-условия
+        String inClause = filmIds.stream()
+                .map(id -> "?")
+                .collect(Collectors.joining(","));
+
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                "mr.id AS mpa_id, mr.name AS mpa_name " +
+                "FROM films f " +
+                "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
+                "WHERE f.id IN (" + inClause + ")";
+
+        List<Film> films = jdbcTemplate.query(sql, mapper, filmIds.toArray());
+
+        for (Film film : films) {
+            film.setGenres(getGenresByFilmId(film.getId()));
+            film.setLikes(getLikesByFilmId(film.getId()));
+        }
+
+        return films;
     }
 
 }

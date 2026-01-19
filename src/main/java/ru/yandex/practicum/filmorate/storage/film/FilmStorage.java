@@ -23,4 +23,6 @@ public interface FilmStorage {
     List<Film> getPopularFilms(Long count);
 
     boolean checkLikeOnFilm(Long filmId, Long userId);
+
+    List<Film> getFilmsByIds(List<Long> filmIds);
 }
