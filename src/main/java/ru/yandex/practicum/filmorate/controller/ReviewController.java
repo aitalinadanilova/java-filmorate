@@ -30,7 +30,9 @@ public class ReviewController {
         if (filmId != null) {
             reviews = service.getReviewsByFilm(filmId, count);
         } else {
-            reviews = service.getAllReviews();
+            reviews = service.getAllReviews().stream()
+                    .limit(count)
+                    .toList();
         }
 
         return reviews.stream()
@@ -38,6 +40,7 @@ public class ReviewController {
                 .map(ReviewMapper::toDto)
                 .toList();
     }
+
 
     @PostMapping
     public ReviewDto create(@Valid @RequestBody ReviewDto dto) {

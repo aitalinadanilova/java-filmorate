@@ -145,7 +145,14 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public boolean checkLikeOnReview(Long reviewId, Long userId) {
-        if ((jdbcTemplate.query("SELECT review_id FROM review_likes WHERE review_id = ? AND user_id = ?", new ColumnMapRowMapper(), reviewId, userId)).contains(userId)) {
+        List<Long> result = jdbcTemplate.query(
+                "SELECT review_id FROM review_likes WHERE review_id = ? AND user_id = ?",
+                (rs, rowNum) -> rs.getLong("review_id"),
+                reviewId,
+                userId
+        );
+
+        if (!result.isEmpty()) {
             throw new ValidationException("Пользователь с id = " + userId + " уже поставил лайк");
         }
         return true;
