@@ -7,7 +7,6 @@ import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.core.DataClassRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Review;
@@ -26,27 +25,36 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public Review createReview(Review review) {
-        String sql = """
-                INSERT INTO reviews (content, is_positive, user_id, film_id, useful)
-                VALUES (?, ?, ?, ?, 0)
-                """;
 
-        KeyHolder keyHolder = new GeneratedKeyHolder();
+        String sql = """
+        INSERT INTO reviews (content, is_positive, user_id, film_id, useful)
+        VALUES (?, ?, ?, ?, 0)
+        """;
+
+        GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
-            PreparedStatement stmt =
-                    connection.prepareStatement(sql, new String[]{"id"});
-            stmt.setString(1, review.getContent());
-            stmt.setBoolean(2, review.isPositive());
-            stmt.setLong(3, review.getUserId());
-            stmt.setLong(4, review.getFilmId());
-            return stmt;
+            PreparedStatement ps = connection.prepareStatement(
+                    sql,
+                    new String[]{"id"}
+            );
+            ps.setString(1, review.getContent());
+            ps.setBoolean(2, review.isPositive());
+            ps.setLong(3, review.getUserId());
+            ps.setLong(4, review.getFilmId());
+            return ps;
         }, keyHolder);
 
-        review.setId(keyHolder.getKey().longValue());
-        review.setUseful(0L);
+        Long generatedId = keyHolder.getKey().longValue();
 
-        return review;
+        return Review.builder()
+                .id(generatedId)
+                .content(review.getContent())
+                .isPositive(review.isPositive())
+                .userId(review.getUserId())
+                .filmId(review.getFilmId())
+                .useful(0L)
+                .build();
     }
 
     @Override
@@ -75,7 +83,6 @@ public class ReviewDbStorage implements ReviewStorage {
         return jdbcTemplate.query(
                 """
                         SELECT * FROM reviews
-                        ORDER BY useful DESC
                         """,
                 mapper
         );
@@ -85,11 +92,11 @@ public class ReviewDbStorage implements ReviewStorage {
     public List<Review> getReviewsByFilm(Long filmId, int count) {
         return jdbcTemplate.query(
                 """
-                        SELECT * FROM reviews
-                        WHERE film_id = ?
-                        ORDER BY useful DESC
-                        LIMIT ?
-                        """,
+                SELECT * FROM reviews
+                WHERE film_id = ?
+                ORDER BY id DESC
+                LIMIT ?
+                """,
                 mapper,
                 filmId,
                 count
@@ -97,7 +104,7 @@ public class ReviewDbStorage implements ReviewStorage {
     }
 
     @Override
-    public void removeReview(Long reviewId, Long userId) {
+    public void removeReview(Long reviewId) {
         jdbcTemplate.update("DELETE FROM reviews WHERE id = ?", reviewId);
     }
 
@@ -138,7 +145,7 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public boolean checkLikeOnReview(Long reviewId, Long userId) {
-        if ((jdbcTemplate.query("SELECT review_id FROM likes WHERE user_id = ? AND user_id = ?", new ColumnMapRowMapper(), reviewId, userId)).contains(userId)) {
+        if ((jdbcTemplate.query("SELECT review_id FROM review_likes WHERE review_id = ? AND user_id = ?", new ColumnMapRowMapper(), reviewId, userId)).contains(userId)) {
             throw new ValidationException("Пользователь с id = " + userId + " уже поставил лайк");
         }
         return true;

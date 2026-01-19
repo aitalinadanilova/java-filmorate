@@ -175,7 +175,7 @@ class ReviewDbStorageTest {
 
     @Test
     void removeReview() {
-        storage.removeReview(1L, 1L);
+        storage.removeReview(1L);
 
         Review deletedReview = storage.getReview(1L);
         assertThat(deletedReview).isNull();

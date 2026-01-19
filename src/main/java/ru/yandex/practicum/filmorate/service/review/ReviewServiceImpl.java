@@ -35,6 +35,7 @@ public class ReviewServiceImpl implements ReviewService {
         if (userStorage.getUser(review.getUserId()) == null) {
             throw new NotFoundException("Пользователь с id=" + review.getUserId() + " не найден");
         }
+
         return reviewStorage.createReview(review);
     }
 
@@ -83,18 +84,13 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public void removeReview(Long reviewId, Long userId) {
+    public void removeReview(Long reviewId) {
         Review review = reviewStorage.getReview(reviewId);
         if (review == null) {
             throw new NotFoundException("Отзыв отсутствует");
         }
 
-        User user = userStorage.getUser(userId);
-        if (user == null) {
-            throw new NotFoundException("Пользователь отсутствует");
-        }
-
-        reviewStorage.removeReview(reviewId, userId);
+        reviewStorage.removeReview(reviewId);
     }
 
     @Override
@@ -105,6 +101,14 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         reviewStorage.removeLike(reviewId, userId);
+    }
+
+    @Override
+    public List<Review> getReviewsByFilm(Long filmId, int count) {
+        if (filmStorage.getFilm(filmId) == null) {
+            throw new NotFoundException("Фильм с id=" + filmId + " не найден");
+        }
+        return reviewStorage.getReviewsByFilm(filmId, count);
     }
 
 }
