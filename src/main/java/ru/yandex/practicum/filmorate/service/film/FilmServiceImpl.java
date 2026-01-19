@@ -98,8 +98,8 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
-    public List<Film> getPopularFilms(Long count) {
-        return filmStorage.getPopularFilms(count);
+    public List<Film> getPopularFilms(Long count, Long genreId, Integer year) {
+        return filmStorage.getPopularFilms(count, genreId, year);
     }
 }
 
