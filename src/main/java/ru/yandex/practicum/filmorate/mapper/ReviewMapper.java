@@ -4,7 +4,8 @@ import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.model.Review;
 
 public class ReviewMapper {
-    private ReviewMapper() {}
+    private ReviewMapper() {
+    }
 
     public static ReviewDto toDto(Review review) {
 

@@ -27,9 +27,9 @@ public class ReviewDbStorage implements ReviewStorage {
     public Review createReview(Review review) {
 
         String sql = """
-        INSERT INTO reviews (content, is_positive, user_id, film_id, useful)
-        VALUES (?, ?, ?, ?, 0)
-        """;
+                INSERT INTO reviews (content, is_positive, user_id, film_id, useful)
+                VALUES (?, ?, ?, ?, 0)
+                """;
 
         GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -92,11 +92,11 @@ public class ReviewDbStorage implements ReviewStorage {
     public List<Review> getReviewsByFilm(Long filmId, int count) {
         return jdbcTemplate.query(
                 """
-                SELECT * FROM reviews
-                WHERE film_id = ?
-                ORDER BY id DESC
-                LIMIT ?
-                """,
+                        SELECT * FROM reviews
+                        WHERE film_id = ?
+                        ORDER BY id DESC
+                        LIMIT ?
+                        """,
                 mapper,
                 filmId,
                 count
