@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -24,11 +25,24 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public Review createReview(Review review) {
         log.info("Отзыв {} создан", review);
-        if (review.getContent().isEmpty()) {
-            throw new NotFoundException("Отзыв не может пустым");
+        if (review.getContent() == null || review.getContent().isEmpty()) {
+            throw new ValidationException("Отзыв не может быть пустым");
+        }
+
+        if (review.getIsPositive() == null) {
+            throw new ValidationException("Поле isPositive обязательно");
+        }
+
+        if (review.getUserId() == null) {
+            throw new ValidationException("Поле userId обязательно");
+        }
+
+        if (review.getFilmId() == null) {
+            throw new ValidationException("Поле filmId обязательно");
         }
 
         if (filmStorage.getFilm(review.getFilmId()) == null) {
+            System.out.println("HERE not film " + review.getFilmId());
             throw new NotFoundException("Фильм с id=" + review.getFilmId() + " не найден");
         }
 
@@ -113,7 +127,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public void addDislike(Long reviewId, Long userId) {
-        log.info("Ставим dislike отызву с id: ", reviewId);
+        log.info("Ставим dislike отзыву с id: {}", reviewId);
         Review review = reviewStorage.getReview(reviewId);
         if (review == null) {
             throw new NotFoundException("Отзыв отсутствует");

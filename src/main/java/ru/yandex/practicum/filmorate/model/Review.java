@@ -12,9 +12,9 @@ import lombok.NoArgsConstructor;
 public class Review {
     private Long id;
     private String content;
-    private boolean isPositive;
-    private long userId;
-    private long filmId;
-    private long useful;
+    private Boolean isPositive;
+    private Long userId;
+    private Long filmId;
+    private Long useful;
 
 }

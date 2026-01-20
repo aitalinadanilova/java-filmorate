@@ -14,9 +14,9 @@ public class ReviewDto {
     private String content;
 
     @JsonProperty("isPositive")
-    private boolean isPositive;
+    private Boolean isPositive;
 
-    private long userId;
-    private long filmId;
-    private long useful;
+    private Long userId;
+    private Long filmId;
+    private Long useful;
 }

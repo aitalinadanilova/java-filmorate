@@ -38,7 +38,7 @@ public class ReviewDbStorage implements ReviewStorage {
                     new String[]{"id"}
             );
             ps.setString(1, review.getContent());
-            ps.setBoolean(2, review.isPositive());
+            ps.setBoolean(2, review.getIsPositive());
             ps.setLong(3, review.getUserId());
             ps.setLong(4, review.getFilmId());
             return ps;
@@ -49,7 +49,7 @@ public class ReviewDbStorage implements ReviewStorage {
         return Review.builder()
                 .id(generatedId)
                 .content(review.getContent())
-                .isPositive(review.isPositive())
+                .isPositive(review.getIsPositive())
                 .userId(review.getUserId())
                 .filmId(review.getFilmId())
                 .useful(0L)
@@ -61,7 +61,7 @@ public class ReviewDbStorage implements ReviewStorage {
         jdbcTemplate.update(
                 "UPDATE reviews SET content = ?, is_positive = ? WHERE id = ?",
                 review.getContent(),
-                review.isPositive(),
+                review.getIsPositive(),
                 review.getId()
         );
         return getReview(review.getId());
@@ -159,35 +159,27 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public void addDislike(Long reviewId, Long userId) {
-        List<Boolean> exists = jdbcTemplate.query(
+        // Проверяем, есть ли запись
+        List<Boolean> result = jdbcTemplate.query(
                 "SELECT is_like FROM review_likes WHERE review_id = ? AND user_id = ?",
                 (rs, rowNum) -> rs.getBoolean("is_like"),
                 reviewId,
                 userId
         );
 
-        if (exists.isEmpty()) {
-            jdbcTemplate.update(
-                    "INSERT INTO review_likes (review_id, user_id, is_like) VALUES (?, ?, false)",
-                    reviewId,
-                    userId
-            );
-            jdbcTemplate.update(
-                    "UPDATE reviews SET useful = useful - 1 WHERE id = ?",
-                    reviewId
-            );
-        } else {
-            boolean previousLike = exists.get(0);
-            if (previousLike) {
+        if (!result.isEmpty()) {
+            if (!result.get(0)) {
+                throw new ValidationException("Пользователь с id = " + userId + " уже поставил дизлайк");
+            } else {
+                // Убираем лайк и ставим дизлайк
+                jdbcTemplate.update(
+                        "UPDATE reviews SET useful = useful - 2 WHERE id = ?", reviewId
+                );
                 jdbcTemplate.update(
                         "UPDATE review_likes SET is_like = false WHERE review_id = ? AND user_id = ?",
-                        reviewId,
-                        userId
+                        reviewId, userId
                 );
-                jdbcTemplate.update(
-                        "UPDATE reviews SET useful = useful - 2 WHERE id = ?",
-                        reviewId
-                );
+                return;
             }
         }
     }
