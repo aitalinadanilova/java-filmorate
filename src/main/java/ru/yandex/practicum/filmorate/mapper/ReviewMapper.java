@@ -9,7 +9,7 @@ public class ReviewMapper {
 
     public static ReviewDto toDto(Review review) {
 
-        ReviewDto ReviewDto = ru.yandex.practicum.filmorate.dto.ReviewDto.builder()
+        ReviewDto reviewDto = ru.yandex.practicum.filmorate.dto.ReviewDto.builder()
                 .reviewId(review.getId())
                 .content(review.getContent())
                 .isPositive(review.isPositive())
@@ -17,8 +17,8 @@ public class ReviewMapper {
                 .filmId(review.getFilmId())
                 .useful(review.getUseful())
                 .build();
-        System.out.println("Response DTO: " + ReviewDto);
-        return ReviewDto;
+        System.out.println("Response DTO: " + reviewDto);
+        return reviewDto;
     }
 
     public static Review toEntity(ReviewDto dto) {
