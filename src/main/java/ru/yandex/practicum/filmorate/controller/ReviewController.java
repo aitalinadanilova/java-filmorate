@@ -78,4 +78,9 @@ public class ReviewController {
     public void removeReview(@PathVariable Long reviewId) {
         service.removeReview(reviewId);
     }
+
+    @PutMapping("/{reviewId}/dislike/{userId}")
+    public void addDislike(@PathVariable Long reviewId, @PathVariable Long userId) {
+        service.addDislike(reviewId, userId);
+    }
 }

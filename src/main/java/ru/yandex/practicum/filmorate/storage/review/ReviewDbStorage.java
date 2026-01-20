@@ -156,4 +156,54 @@ public class ReviewDbStorage implements ReviewStorage {
         }
         return true;
     }
+
+    @Override
+    public void addDislike(Long reviewId, Long userId) {
+        List<Boolean> exists = jdbcTemplate.query(
+                "SELECT is_like FROM review_likes WHERE review_id = ? AND user_id = ?",
+                (rs, rowNum) -> rs.getBoolean("is_like"),
+                reviewId,
+                userId
+        );
+
+        if (exists.isEmpty()) {
+            jdbcTemplate.update(
+                    "INSERT INTO review_likes (review_id, user_id, is_like) VALUES (?, ?, false)",
+                    reviewId,
+                    userId
+            );
+            jdbcTemplate.update(
+                    "UPDATE reviews SET useful = useful - 1 WHERE id = ?",
+                    reviewId
+            );
+        } else {
+            boolean previousLike = exists.get(0);
+            if (previousLike) {
+                jdbcTemplate.update(
+                        "UPDATE review_likes SET is_like = false WHERE review_id = ? AND user_id = ?",
+                        reviewId,
+                        userId
+                );
+                jdbcTemplate.update(
+                        "UPDATE reviews SET useful = useful - 2 WHERE id = ?",
+                        reviewId
+                );
+            }
+        }
+    }
+
+    @Override
+    public boolean checkDislikeOnReview(Long reviewId, Long userId) {
+        List<Long> result = jdbcTemplate.query(
+                "SELECT review_id FROM review_likes WHERE review_id = ? AND user_id = ?",
+                (rs, rowNum) -> rs.getLong("review_id"),
+                reviewId,
+                userId
+        );
+
+        if (!result.isEmpty()) {
+            throw new ValidationException("Пользователь с id = " + userId + " уже поставил оценку (лайк/дизлайк)");
+        }
+        return true;
+    }
 }

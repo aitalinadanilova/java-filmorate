@@ -111,5 +111,21 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewStorage.getReviewsByFilm(filmId, count);
     }
 
+    @Override
+    public void addDislike(Long reviewId, Long userId) {
+        log.info("Ставим dislike отызву с id: ", reviewId);
+        Review review = reviewStorage.getReview(reviewId);
+        if (review == null) {
+            throw new NotFoundException("Отзыв отсутствует");
+        }
+
+        User user = userStorage.getUser(userId);
+        if (user == null) {
+            throw new NotFoundException("Пользователь отсутствует");
+        }
+
+        reviewStorage.addDislike(reviewId, userId);
+    }
+
 }
 

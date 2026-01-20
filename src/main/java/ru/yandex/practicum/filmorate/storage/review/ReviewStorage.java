@@ -25,4 +25,8 @@ public interface ReviewStorage {
     void removeLike(Long id, Long userId);
 
     boolean checkLikeOnReview(Long reviewId, Long userId);
+
+    void addDislike (Long id, Long userId);
+
+    boolean checkDislikeOnReview(Long reviewId, Long userId);
 }
