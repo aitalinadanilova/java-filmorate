@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service.feed;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.feed.EventType;
@@ -13,15 +14,16 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FeedServiceImpl implements FeedService {
 
-    private FeedStorage feedStorage;
+    private final FeedStorage feedStorage;
 
     @Override
     public void createFeed(Long userId, EventType eventType, Operation operation, Long entityId) {
         log.info("Создание объекта feed: userId {}, eventType {}, operation {}, entityId {}", userId, eventType, operation, entityId);
         Feed feed = Feed.builder()
-                .timestamp(Timestamp.valueOf(LocalDateTime.now()))
+                .timestamp(System.currentTimeMillis())
                 .userId(userId)
                 .eventType(eventType)
                 .operation(operation)
