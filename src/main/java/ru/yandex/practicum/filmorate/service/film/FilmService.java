@@ -34,4 +34,6 @@ public interface FilmService {
     List<Film> getPopularFilms(Long count, Long  genreId, Integer year);
 
     List<Film> searchFilms(String query, String by);
+
+    List<Film> getCommonFilms(Long userId, Long friendId);
 }
