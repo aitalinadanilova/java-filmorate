@@ -5,14 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Timestamp;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Feed {
-    Timestamp timestamp;
+    Long timestamp;
     Long userId;
     EventType eventType;
     Operation operation;

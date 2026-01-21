@@ -6,14 +6,14 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.model.feed.Feed;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
 
-@Repository
+@Component
 @Slf4j
 @Primary
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class FeedDbStorage implements FeedStorage {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setTimestamp(1, feed.getTimestamp());
+            ps.setLong(1, feed.getTimestamp());
             ps.setLong(2, feed.getUserId());
             ps.setString(3, feed.getEventType().toString());
             ps.setString(4, feed.getOperation().toString());
