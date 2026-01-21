@@ -103,7 +103,7 @@ class FilmDbStorageTest {
         assertThat(sortedFilms.get(0).getName()).isEqualTo("Film 2010"); // Старый фильм первый
         assertThat(sortedFilms.get(1).getName()).isEqualTo("Film 2020");
     }
-    
+
     @Test
     @Sql(scripts = {"/common-films-test.sql"})
     void testGetCommonFilms() {
