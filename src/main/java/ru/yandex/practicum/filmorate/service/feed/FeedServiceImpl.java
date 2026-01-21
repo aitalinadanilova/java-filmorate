@@ -1,0 +1,43 @@
+package ru.yandex.practicum.filmorate.service.feed;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.model.feed.EventType;
+import ru.yandex.practicum.filmorate.model.feed.Feed;
+import ru.yandex.practicum.filmorate.model.feed.Operation;
+import ru.yandex.practicum.filmorate.storage.feed.FeedStorage;
+
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Slf4j
+@Service
+public class FeedServiceImpl implements FeedService {
+
+    private FeedStorage feedStorage;
+
+    @Override
+    public Feed createFeed(Long userId, EventType eventType, Operation operation, Long entityId) {
+        log.info("Создание объекта feed: userId {}, eventType {}, operation {}, entityId {}", userId, eventType, operation, entityId);
+        Feed feed = Feed.builder()
+                .timestamp(Timestamp.valueOf(LocalDateTime.now()))
+                .userId(userId)
+                .eventType(eventType)
+                .operation(operation)
+                .entityId(entityId)
+                .build();
+
+        return feedStorage.createFeed(feed);
+    }
+
+    @Override
+    public List<Feed> getFeed(Long userId) {
+        return feedStorage.getFeed(userId);
+    }
+
+    @Override
+    public void deleteFeed(Long eventId) {
+        feedStorage.deleteFeed(eventId);
+    }
+}
