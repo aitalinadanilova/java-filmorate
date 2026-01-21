@@ -7,7 +7,6 @@ DROP TABLE IF EXISTS films_genre;
 DROP TABLE IF EXISTS friends;
 DROP TABLE IF EXISTS films;
 DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS feed;
 DROP TABLE IF EXISTS directors;
 DROP TABLE IF EXISTS genres;
 DROP TABLE IF EXISTS rating_mpa;
@@ -32,7 +31,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS feed (
-    timestamp BIGINT NOT NULL,
+    timestamp TIMESTAMP,
     user_id BIGINT NOT NULL,
     event_type VARCHAR(20) NOT NULL,
     operation VARCHAR(20) NOT NULL,
