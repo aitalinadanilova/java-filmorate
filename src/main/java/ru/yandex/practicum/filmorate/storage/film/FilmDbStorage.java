@@ -386,4 +386,33 @@ public class FilmDbStorage implements FilmStorage {
         loadDataForFilms(films);
         return films;
     }
+
+    @Override
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        log.info("Получение общих фильмов для пользователей {} и {}", userId, friendId);
+
+        // SQL запрос для получения общих фильмов, отсортированных по популярности (количеству лайков)
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name, " +
+                "COUNT(l.user_id) AS like_count " +
+                "FROM films f " +
+                "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
+                "LEFT JOIN likes l ON f.id = l.film_id " +
+                "WHERE f.id IN (" +
+                "    SELECT l1.film_id FROM likes l1 WHERE l1.user_id = ? " +
+                "    INTERSECT " +
+                "    SELECT l2.film_id FROM likes l2 WHERE l2.user_id = ? " +
+                ") " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, " +
+                "f.rating_mpa_id, mr.name " +
+                "ORDER BY like_count DESC";
+
+        try {
+            List<Film> films = jdbcTemplate.query(sql, mapper, userId, friendId);
+            loadDataForFilms(films);
+            return films;
+        } catch (EmptyResultDataAccessException e) {
+            return Collections.emptyList();
+        }
+    }
 }
