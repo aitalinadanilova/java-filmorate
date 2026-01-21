@@ -78,4 +78,16 @@ public class UserServiceImpl implements UserService {
         }
         return storage.getCommonFriends(userId,friendId);
     }
+
+    @Override
+    public void deleteUser(Long userId) {
+        log.info("Запрос на удаление пользователя с id={}", userId);
+
+        User user = storage.getUser(userId);
+        if (user == null) {
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
+        }
+
+        storage.deleteUser(userId);
+    }
 }
