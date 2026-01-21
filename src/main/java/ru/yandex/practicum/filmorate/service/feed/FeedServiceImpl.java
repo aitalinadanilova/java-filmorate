@@ -18,7 +18,7 @@ public class FeedServiceImpl implements FeedService {
     private FeedStorage feedStorage;
 
     @Override
-    public Feed createFeed(Long userId, EventType eventType, Operation operation, Long entityId) {
+    public void createFeed(Long userId, EventType eventType, Operation operation, Long entityId) {
         log.info("Создание объекта feed: userId {}, eventType {}, operation {}, entityId {}", userId, eventType, operation, entityId);
         Feed feed = Feed.builder()
                 .timestamp(Timestamp.valueOf(LocalDateTime.now()))
@@ -28,7 +28,7 @@ public class FeedServiceImpl implements FeedService {
                 .entityId(entityId)
                 .build();
 
-        return feedStorage.createFeed(feed);
+        feedStorage.createFeed(feed);
     }
 
     @Override

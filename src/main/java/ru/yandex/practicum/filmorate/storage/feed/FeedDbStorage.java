@@ -17,12 +17,12 @@ import java.util.List;
 @Slf4j
 @Primary
 @RequiredArgsConstructor
-public class FeedDbStorage implements FeedStorage{
+public class FeedDbStorage implements FeedStorage {
     private final JdbcTemplate jdbcTemplate;
     private final FeedRowMapper rowMapper;
 
     @Override
-    public Feed createFeed(Feed feed) {
+    public void createFeed(Feed feed) {
         log.info("Добавление нового события пользователя {}: {} - {}", feed.getUserId(), feed.getEventType(), feed.getOperation());
         String sql = "INSERT INTO feed (timestamp, user_id, event_type, operation, entity_id) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -36,9 +36,6 @@ public class FeedDbStorage implements FeedStorage{
             ps.setLong(5, feed.getEntityId());
             return ps;
         }, keyHolder);
-
-        feed.setEventId(keyHolder.getKey().longValue());
-        return feed;
     }
 
     @Override

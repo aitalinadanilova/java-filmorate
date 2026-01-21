@@ -5,7 +5,7 @@ import ru.yandex.practicum.filmorate.model.feed.Feed;
 import java.util.List;
 
 public interface FeedStorage {
-    Feed createFeed (Feed feed);
+    void createFeed(Feed feed);
 
     List<Feed> getFeed(Long userId);
 
