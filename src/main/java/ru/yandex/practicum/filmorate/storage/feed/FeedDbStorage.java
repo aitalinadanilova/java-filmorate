@@ -29,7 +29,7 @@ public class FeedDbStorage implements FeedStorage {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setTimestamp(1, feed.getTimestamp());
+            ps.setLong(1, feed.getTimestamp());
             ps.setLong(2, feed.getUserId());
             ps.setString(3, feed.getEventType().toString());
             ps.setString(4, feed.getOperation().toString());
