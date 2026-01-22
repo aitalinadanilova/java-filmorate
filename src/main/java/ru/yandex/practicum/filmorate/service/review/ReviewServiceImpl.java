@@ -7,6 +7,9 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.feed.EventType;
+import ru.yandex.practicum.filmorate.model.feed.Operation;
+import ru.yandex.practicum.filmorate.service.feed.FeedService;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -21,6 +24,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewStorage reviewStorage;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
+    private final FeedService feedService;
 
     @Override
     public Review createReview(Review review) {
@@ -50,7 +54,9 @@ public class ReviewServiceImpl implements ReviewService {
             throw new NotFoundException("Пользователь с id=" + review.getUserId() + " не найден");
         }
 
-        return reviewStorage.createReview(review);
+        Review newReview = reviewStorage.createReview(review);
+        feedService.createFeed(newReview.getUserId(), EventType.REVIEW, Operation.ADD, newReview.getId());
+        return newReview;
     }
 
     @Override
@@ -64,6 +70,7 @@ public class ReviewServiceImpl implements ReviewService {
             throw new NotFoundException("Отзыв с id = " + review.getId() + " не найден");
         }
 
+        feedService.createFeed(review.getUserId(), EventType.REVIEW, Operation.UPDATE, review.getId());
         return reviewStorage.updateReview(review);
     }
 
@@ -104,6 +111,7 @@ public class ReviewServiceImpl implements ReviewService {
             throw new NotFoundException("Отзыв отсутствует");
         }
 
+        feedService.createFeed(review.getUserId(), EventType.REVIEW, Operation.REMOVE, reviewId);
         reviewStorage.removeReview(reviewId);
     }
 
