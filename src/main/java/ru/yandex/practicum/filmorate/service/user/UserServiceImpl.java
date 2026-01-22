@@ -5,6 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.feed.EventType;
+import ru.yandex.practicum.filmorate.model.feed.Operation;
+import ru.yandex.practicum.filmorate.service.feed.FeedService;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
@@ -14,6 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserStorage storage;
+    private final FeedService feedService;
 
     public User createUser(User user) {
         if (user.getName() == null || user.getName().isBlank()) {
@@ -54,6 +58,7 @@ public class UserServiceImpl implements UserService {
         }
         storage.addFriends(userId,friendId);
         log.info("Пользователь {} стал другом пользователя {}",storage.getUser(userId),storage.getUser(friendId));
+        feedService.createFeed(userId, EventType.FRIEND, Operation.ADD, friendId);
     }
 
     public void removeFromFriends(Long userId, Long friendId) {
@@ -62,6 +67,7 @@ public class UserServiceImpl implements UserService {
         }
         storage.removeFriends(userId,friendId);
         log.info("Пользователи {} {} больше не друзья ",storage.getUser(userId),storage.getUser(friendId));
+        feedService.createFeed(userId, EventType.FRIEND, Operation.REMOVE, friendId);
     }
 
     public List<User> getUsersFriends(Long userId) {

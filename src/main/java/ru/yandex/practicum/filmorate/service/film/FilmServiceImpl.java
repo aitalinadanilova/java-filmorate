@@ -7,6 +7,9 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.feed.EventType;
+import ru.yandex.practicum.filmorate.model.feed.Operation;
+import ru.yandex.practicum.filmorate.service.feed.FeedService;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaStorage;
@@ -23,6 +26,7 @@ public class FilmServiceImpl implements FilmService {
     private final GenreStorage genreStorage;
     private final MpaStorage mpaStorage;
     private final UserStorage userStorage;
+    private final FeedService feedService;
 
     @Override
     public Film createFilm(Film film) {
@@ -59,6 +63,7 @@ public class FilmServiceImpl implements FilmService {
 
         filmStorage.addLike(filmId, userId);
         log.info("Пользователь {} поставил лайк фильму {}", userId, filmId);
+        feedService.createFeed(userId, EventType.LIKE, Operation.ADD, filmId);
     }
 
     @Override
@@ -67,6 +72,7 @@ public class FilmServiceImpl implements FilmService {
 
         filmStorage.removeLike(filmId, userId);
         log.info("Пользователь {} удалил лайк у фильма {}", userId, filmId);
+        feedService.createFeed(userId, EventType.LIKE, Operation.REMOVE, filmId);
     }
 
     @Override
