@@ -133,7 +133,6 @@ class ReviewDbStorageTest {
 
     @Test
     void getAllReviews() {
-        List<Review> reviews = storage.getAllReviews();
 
         assertThat(reviews).isNotEmpty();
         assertThat(reviews).hasSizeGreaterThanOrEqualTo(3);

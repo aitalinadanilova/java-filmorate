@@ -159,8 +159,25 @@ public class ReviewDbStorage implements ReviewStorage {
     @Override
     public void addDislike(Long reviewId, Long userId) {
         jdbcTemplate.update("UPDATE reviews SET useful = useful - 1 WHERE id = ?", reviewId);
-        jdbcTemplate.update("INSERT INTO review_likes (review_id, user_id, is_like) VALUES (?, ?, false)",
-                reviewId, userId);
+
+        String sql = """
+            INSERT INTO review_likes (review_id, user_id, is_like)
+            SELECT ?, ?, false FROM (SELECT 1)
+            WHERE NOT EXISTS (
+                SELECT 1 FROM review_likes WHERE review_id = ? AND user_id = ?
+            )
+            """;
+        jdbcTemplate.update(sql, reviewId, userId, reviewId, userId);
+    }
+
+    @Override
+    public void removeDislike(Long reviewId, Long userId) {
+        jdbcTemplate.update("UPDATE reviews SET useful = useful + 1 WHERE id = ?", reviewId);
+
+        jdbcTemplate.update(
+                "DELETE FROM review_likes WHERE review_id = ? AND user_id = ? AND is_like = false",
+                reviewId, userId
+        );
     }
 
     @Override

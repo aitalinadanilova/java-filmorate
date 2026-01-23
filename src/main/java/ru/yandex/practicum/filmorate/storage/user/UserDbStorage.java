@@ -91,7 +91,16 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriends(Long userId, Long friendId) {
-        jdbcTemplate.update("INSERT INTO friends (user1_id, user2_id, status)values (?, ?, ?)", userId, friendId, true);
+        String sql = """
+            INSERT INTO friends (user1_id, user2_id, status)
+            SELECT ?, ?, true FROM (SELECT 1)
+            WHERE NOT EXISTS (
+                SELECT 1 FROM friends WHERE user1_id = ? AND user2_id = ?
+            )
+            """;
+
+        jdbcTemplate.update(sql, userId, friendId, userId, friendId);
+        log.info("Запрос в друзья отправлен: {} -> {}", userId, friendId);
     }
 
     @Override
