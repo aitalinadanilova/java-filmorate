@@ -10,8 +10,6 @@ import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.service.review.ReviewService;
 
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
 
 @RestController
 @RequestMapping("/reviews")
