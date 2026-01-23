@@ -23,13 +23,7 @@ public class FeedServiceImpl implements FeedService {
     @Override
     public void createFeed(Long userId, EventType eventType, Operation operation, Long entityId) {
         log.info("Создание объекта feed: userId {}, eventType {}, operation {}, entityId {}", userId, eventType, operation, entityId);
-        Feed feed = Feed.builder()
-                .timestamp(System.currentTimeMillis())
-                .userId(userId)
-                .eventType(eventType)
-                .operation(operation)
-                .entityId(entityId)
-                .build();
+        Feed feed = Feed.builder().timestamp(System.currentTimeMillis()).userId(userId).eventType(eventType).operation(operation).entityId(entityId).build();
 
         feedStorage.createFeed(feed);
     }
