@@ -117,12 +117,27 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public void addLike(Long reviewId, Long userId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND user_id = ?",
+                Integer.class,
+                reviewId,
+                userId
+        );
+
+        if (count != null && count > 0) {
+            throw new ValidationException("Пользователь с id = " + userId + " уже оценил этот отзыв");
+        }
+
         jdbcTemplate.update(
                 "UPDATE reviews SET useful = useful + 1 WHERE id = ?",
                 reviewId
         );
 
-        jdbcTemplate.update("INSERT INTO review_likes (review_id, user_id, is_like) values (?, ?, true);", reviewId, userId);
+        jdbcTemplate.update(
+                "INSERT INTO review_likes (review_id, user_id, is_like) VALUES (?, ?, true)",
+                reviewId,
+                userId
+        );
     }
 
     @Override
@@ -158,16 +173,27 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public void addDislike(Long reviewId, Long userId) {
-        jdbcTemplate.update("UPDATE reviews SET useful = useful - 1 WHERE id = ?", reviewId);
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND user_id = ?",
+                Integer.class,
+                reviewId,
+                userId
+        );
 
-        String sql = """
-            INSERT INTO review_likes (review_id, user_id, is_like)
-            SELECT ?, ?, false FROM (SELECT 1)
-            WHERE NOT EXISTS (
-                SELECT 1 FROM review_likes WHERE review_id = ? AND user_id = ?
-            )
-            """;
-        jdbcTemplate.update(sql, reviewId, userId, reviewId, userId);
+        if (count != null && count > 0) {
+            throw new ValidationException("Пользователь с id = " + userId + " уже оценил этот отзыв");
+        }
+
+        jdbcTemplate.update(
+                "UPDATE reviews SET useful = useful - 1 WHERE id = ?",
+                reviewId
+        );
+
+        jdbcTemplate.update(
+                "INSERT INTO review_likes (review_id, user_id, is_like) VALUES (?, ?, false)",
+                reviewId,
+                userId
+        );
     }
 
     @Override
@@ -180,18 +206,4 @@ public class ReviewDbStorage implements ReviewStorage {
         );
     }
 
-    @Override
-    public boolean checkDislikeOnReview(Long reviewId, Long userId) {
-        List<Long> result = jdbcTemplate.query(
-                "SELECT review_id FROM review_likes WHERE review_id = ? AND user_id = ?",
-                (rs, rowNum) -> rs.getLong("review_id"),
-                reviewId,
-                userId
-        );
-
-        if (!result.isEmpty()) {
-            throw new ValidationException("Пользователь с id = " + userId + " уже поставил оценку (лайк/дизлайк)");
-        }
-        return true;
-    }
 }

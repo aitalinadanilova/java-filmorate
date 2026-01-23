@@ -30,5 +30,4 @@ public interface ReviewStorage {
 
     void removeDislike(Long reviewId, Long userId);
 
-    boolean checkDislikeOnReview(Long reviewId, Long userId);
 }
