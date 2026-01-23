@@ -172,4 +172,12 @@ public class FilmServiceImpl implements FilmService {
         log.info("Получение общих фильмов для пользователей {} и {}", userId, friendId);
         return filmStorage.getCommonFilms(userId, friendId);
     }
+
+    @Override
+    public void deleteFilm(Long filmId) {
+        filmStorage.getFilm(filmId);
+
+        log.info("Удаление фильма с id={}", filmId);
+        filmStorage.deleteFilm(filmId);
+    }
 }

@@ -19,10 +19,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -414,5 +410,30 @@ public class FilmDbStorage implements FilmStorage {
         } catch (EmptyResultDataAccessException e) {
             return Collections.emptyList();
         }
+    }
+
+    @Override
+    public void deleteFilm(Long filmId) {
+        log.info("Удаление фильма с id={}", filmId);
+
+        // Проверяем существование фильма
+        Film film = getFilm(filmId);
+        if (film == null) {
+            throw new NotFoundException("Фильм с id=" + filmId + " не найден");
+        }
+
+        // Удаляем связанные данные (из-за внешних ключей)
+        jdbcTemplate.update("DELETE FROM likes WHERE film_id = ?", filmId);
+        jdbcTemplate.update("DELETE FROM films_genre WHERE film_id = ?", filmId);
+        jdbcTemplate.update("DELETE FROM film_director WHERE film_id = ?", filmId);
+
+        // Удаляем сам фильм
+        int rows = jdbcTemplate.update("DELETE FROM films WHERE id = ?", filmId);
+
+        if (rows == 0) {
+            throw new NotFoundException("Не удалось удалить фильм с id=" + filmId);
+        }
+
+        log.info("Фильм с id={} успешно удален", filmId);
     }
 }

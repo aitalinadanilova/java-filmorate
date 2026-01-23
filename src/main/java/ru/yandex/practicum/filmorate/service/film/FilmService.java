@@ -36,4 +36,6 @@ public interface FilmService {
     List<Film> searchFilms(String query, String by);
 
     List<Film> getCommonFilms(Long userId, Long friendId);
+
+    void deleteFilm(Long filmId);
 }
