@@ -24,31 +24,13 @@ public class ReviewController {
     public Collection<ReviewDto> findAll(
             @RequestParam(required = false) Long filmId,
             @RequestParam(defaultValue = "10") int count) {
-
-        List<Review> reviews;
-
-        if (filmId != null) {
-            reviews = service.getReviewsByFilm(filmId, count);
-        } else {
-            reviews = service.getAllReviews().stream()
-                    .limit(count)
-                    .toList();
-        }
-
-        return reviews.stream()
-                .sorted(Comparator.comparingLong(Review::getUseful).reversed())
-                .map(ReviewMapper::toDto)
-                .toList();
+            return service.findAll(filmId, count);
     }
 
 
     @PostMapping
     public ReviewDto create(@Valid @RequestBody ReviewDto dto) {
-        System.out.println("Received DTO: " + dto);
-        Review review = ReviewMapper.toEntity(dto);
-        Review saved = service.createReview(review);
-        System.out.println("Saved review: " + saved);
-        return ReviewMapper.toDto(saved);
+        return service.createReview(dto);
     }
 
     @PutMapping
