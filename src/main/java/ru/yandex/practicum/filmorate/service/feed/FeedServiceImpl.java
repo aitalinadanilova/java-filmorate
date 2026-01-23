@@ -3,10 +3,12 @@ package ru.yandex.practicum.filmorate.service.feed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.feed.EventType;
 import ru.yandex.practicum.filmorate.model.feed.Feed;
 import ru.yandex.practicum.filmorate.model.feed.Operation;
 import ru.yandex.practicum.filmorate.storage.feed.FeedStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
 
@@ -16,6 +18,7 @@ import java.util.List;
 public class FeedServiceImpl implements FeedService {
 
     private final FeedStorage feedStorage;
+    private final UserStorage userStorage;
 
     @Override
     public void createFeed(Long userId, EventType eventType, Operation operation, Long entityId) {
@@ -33,6 +36,9 @@ public class FeedServiceImpl implements FeedService {
 
     @Override
     public List<Feed> getFeed(Long userId) {
+        if (userStorage.getUser(userId) == null) {
+            throw new NotFoundException("Пользователь с указанным id не найден");
+        }
         return feedStorage.getFeed(userId);
     }
 
