@@ -152,16 +152,18 @@ class ReviewDbStorageTest {
     void getReviewsByFilm() {
         List<Review> reviews = storage.getReviewsByFilm(1L, 10);
 
-        assertThat(reviews).isNotEmpty();
-        assertThat(reviews).hasSize(2);
+        assertThat(reviews)
+                .isNotEmpty()
+                .hasSize(2);
 
-        reviews.forEach(review -> {
+        assertThat(reviews).allSatisfy(review -> {
             assertThat(review.getFilmId()).isEqualTo(1L);
         });
 
-        // Убираем проверку порядка, или проверяем по ID
-        assertThat(reviews.get(0).getUseful()).isEqualTo(2L);  // первый по порядку вставки
-        assertThat(reviews.get(1).getUseful()).isEqualTo(5L);  // второй по порядку вставки
+        assertThat(reviews.get(0).getUseful()).isEqualTo(5L);
+        assertThat(reviews.get(1).getUseful()).isEqualTo(2L);
+
+        assertThat(reviews.get(0).getUseful()).isGreaterThanOrEqualTo(reviews.get(1).getUseful());
     }
 
     @Test
