@@ -241,54 +241,40 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getPopularFilms(Long count, Long genreId, Integer year) {
-        // Базовая часть запроса. Постоянна
         StringBuilder sql = new StringBuilder(
-                "SELECT f.ID, f.NAME, COUNT(l.USER_ID) as cnt_like " +
-                        "FROM FILMS f " +
-                        "LEFT JOIN likes l ON l.film_id = f.id "
+                "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                        "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
+                        "FROM films f " +
+                        "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
+                        "LEFT JOIN likes l ON f.id = l.film_id "
         );
 
-        // Список параметров
         List<Object> params = new ArrayList<>();
-
-        // Условия для фильтрации WHERE
         List<String> conditions = new ArrayList<>();
 
-        // Если жанр передан - добавляется JOIN и условие фильтрации
         if (genreId != null) {
             sql.append("JOIN films_genre fg ON f.id = fg.film_id ");
             conditions.add("fg.genre_id = ?");
             params.add(genreId);
         }
 
-        // Если год передан - добавляется JOIN и условие фильтрации
         if (year != null) {
             conditions.add("EXTRACT(YEAR FROM f.release_date) = ?");
             params.add(year);
         }
 
-        // Если хотя бы один фильтр передан - добавляется WHERE
         if (!conditions.isEmpty()) {
-            sql.append("WHERE ")
-                    .append(String.join(" AND ", conditions))
-                    .append(" ");
+            sql.append("WHERE ").append(String.join(" AND ", conditions)).append(" ");
         }
 
-        // Добавляется группировка и сортировка по количеству лайков + ограничение кол-ва
-        sql.append(
-                "GROUP BY f.ID, f.NAME " +
-                        "ORDER BY cnt_like DESC " +
-                        "LIMIT ? "
-        );
-
-        // LIMIT - последний параметр
+        sql.append("GROUP BY f.id, mr.name ORDER BY COUNT(l.user_id) DESC LIMIT ?");
         params.add(count);
 
+        List<Film> films = jdbcTemplate.query(sql.toString(), mapper, params.toArray());
 
-        return jdbcTemplate.query(
-                sql.toString(),
-                new DataClassRowMapper<>(Film.class),
-                params.toArray());
+        loadDataForFilms(films);
+
+        return films;
     }
 
 

@@ -61,17 +61,14 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Review updateReview(Review review) {
-        if (review.getId() == null) {
-            throw new NullPointerException("Id должен быть указан");
-        }
+        Review oldReview = reviewStorage.getReview(review.getId());
+        if (oldReview == null) throw new NotFoundException("...");
 
-        Review existingReview = reviewStorage.getReview(review.getId());
-        if (existingReview == null) {
-            throw new NotFoundException("Отзыв с id = " + review.getId() + " не найден");
-        }
+        Review updated = reviewStorage.updateReview(review);
 
-        feedService.createFeed(review.getUserId(), EventType.REVIEW, Operation.UPDATE, review.getId());
-        return reviewStorage.updateReview(review);
+        feedService.createFeed(oldReview.getUserId(), EventType.REVIEW, Operation.UPDATE, updated.getId());
+
+        return updated;
     }
 
     @Override
