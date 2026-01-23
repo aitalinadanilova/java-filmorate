@@ -294,7 +294,10 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public void addLike(Long id, Long userId) {
-        jdbcTemplate.update("INSERT INTO likes (film_id, user_id) VALUES (?, ?)", id, userId);
+        String sql = "INSERT INTO likes (film_id, user_id) " +
+                "SELECT ?, ? WHERE NOT EXISTS " +
+                "(SELECT 1 FROM likes WHERE film_id = ? AND user_id = ?)";
+        jdbcTemplate.update(sql, id, userId, id, userId);
     }
 
     @Override
