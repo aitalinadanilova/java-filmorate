@@ -2,98 +2,70 @@ package ru.yandex.practicum.filmorate.service.recommendation;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class RecommendationServiceImpl implements RecommendationService {
 
-    private final UserStorage userStorage;
     private final FilmStorage filmStorage;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public List<Film> getRecommendations(Long userId) {
         // Проверяем существование пользователя
-        User user = userStorage.getUser(userId);
-        if (user == null) {
+        String checkUserSql = "SELECT COUNT(*) FROM users WHERE id = ?";
+        Integer userCount = jdbcTemplate.queryForObject(checkUserSql, Integer.class, userId);
+        if (userCount == null || userCount == 0) {
             throw new NotFoundException("Пользователь с id = " + userId + " не найден");
         }
 
-        // Получаем всех пользователей
-        List<User> allUsers = userStorage.getAllUsers();
+        String sql = """
+            WITH 
+            current_user_likes AS (
+                SELECT film_id 
+                FROM likes 
+                WHERE user_id = ?
+            ),
+            similar_users AS (
+                SELECT 
+                    l2.user_id AS similar_user_id,
+                    COUNT(DISTINCT l2.film_id) AS common_likes_count
+                FROM likes l1
+                JOIN likes l2 ON l1.film_id = l2.film_id
+                WHERE l1.user_id = ? 
+                    AND l2.user_id != ?
+                GROUP BY l2.user_id
+                HAVING COUNT(DISTINCT l2.film_id) > 0
+                ORDER BY common_likes_count DESC
+                LIMIT 1
+            )            
+            SELECT DISTINCT l.film_id
+            FROM likes l
+            LEFT JOIN similar_users su ON l.user_id = su.similar_user_id
+            WHERE su.similar_user_id IS NOT NULL
+                AND l.film_id NOT IN (SELECT film_id FROM current_user_likes)
+            ORDER BY l.film_id
+            """;
 
-        // Находим пользователя с максимальным пересечением лайков
-        Map<Long, Set<Long>> userLikesMap = new HashMap<>();
+        List<Long> recommendedFilmIds = jdbcTemplate.queryForList(sql, Long.class,
+                userId, userId, userId);
 
-        // Заполняем мапу лайков пользователей
-        for (User u : allUsers) {
-            List<Film> likedFilms = filmStorage.getAllFilms().stream()
-                    .filter(f -> f.getLikes() != null && f.getLikes().contains(u.getId()))
-                    .collect(Collectors.toList());
-            Set<Long> filmIds = likedFilms.stream()
-                    .map(Film::getId)
-                    .collect(Collectors.toSet());
-            userLikesMap.put(u.getId(), filmIds);
+        if (recommendedFilmIds.isEmpty()) {
+            log.info("Для пользователя {} не найдено рекомендаций", userId);
+            return List.of();
         }
 
-        // Лайки текущего пользователя
-        Set<Long> currentUserLikes = userLikesMap.getOrDefault(userId, Collections.emptySet());
-
-        // Находим пользователя с максимальным пересечением лайков
-        Long mostSimilarUserId = findMostSimilarUser(userId, userLikesMap, currentUserLikes);
-
-        if (mostSimilarUserId == null) {
-            log.info("Для пользователя {} не найдено пользователей с пересекающимися лайками", userId);
-            return Collections.emptyList();
-        }
-
-        // Фильмы, которые лайкнул похожий пользователь, но не лайкнул текущий
-        Set<Long> similarUserLikes = userLikesMap.get(mostSimilarUserId);
-        Set<Long> recommendedFilmIds = new HashSet<>(similarUserLikes);
-        recommendedFilmIds.removeAll(currentUserLikes);
-
-        // Получаем объекты фильмов
-        List<Film> allFilms = filmStorage.getAllFilms();
-        List<Film> recommendedFilms = allFilms.stream()
-                .filter(f -> recommendedFilmIds.contains(f.getId()))
-                .collect(Collectors.toList());
-
+        List<Film> recommendedFilms = filmStorage.getFilmsByIds(recommendedFilmIds);
         log.info("Для пользователя {} найдено {} рекомендаций", userId, recommendedFilms.size());
+
         return recommendedFilms;
-    }
-
-    private Long findMostSimilarUser(Long currentUserId, Map<Long, Set<Long>> userLikesMap,
-                                     Set<Long> currentUserLikes) {
-        Long mostSimilarUserId = null;
-        int maxIntersection = 0;
-
-        for (Map.Entry<Long, Set<Long>> entry : userLikesMap.entrySet()) {
-            Long otherUserId = entry.getKey();
-
-            // Пропускаем текущего пользователя
-            if (otherUserId.equals(currentUserId)) {
-                continue;
-            }
-
-            Set<Long> otherUserLikes = entry.getValue();
-            Set<Long> intersection = new HashSet<>(currentUserLikes);
-            intersection.retainAll(otherUserLikes);
-
-            if (intersection.size() > maxIntersection) {
-                maxIntersection = intersection.size();
-                mostSimilarUserId = otherUserId;
-            }
-        }
-
-        return mostSimilarUserId;
     }
 }
