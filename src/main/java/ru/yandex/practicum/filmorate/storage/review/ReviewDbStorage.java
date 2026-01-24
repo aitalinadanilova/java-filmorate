@@ -159,7 +159,6 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public void addDislike(Long reviewId, Long userId) {
-        // Проверяем, есть ли запись
         List<Boolean> result = jdbcTemplate.query(
                 "SELECT is_like FROM review_likes WHERE review_id = ? AND user_id = ?",
                 (rs, rowNum) -> rs.getBoolean("is_like"),
@@ -169,20 +168,33 @@ public class ReviewDbStorage implements ReviewStorage {
 
         if (!result.isEmpty()) {
             if (!result.get(0)) {
-                throw new ValidationException("Пользователь с id = " + userId + " уже поставил дизлайк");
+                throw new ValidationException(
+                        "Пользователь с id = " + userId + " уже поставил дизлайк"
+                );
             } else {
-                // Убираем лайк и ставим дизлайк
+                // Был лайк → меняем на дизлайк
                 jdbcTemplate.update(
-                        "UPDATE reviews SET useful = useful - 2 WHERE id = ?", reviewId
+                        "UPDATE reviews SET useful = useful - 2 WHERE id = ?",
+                        reviewId
                 );
                 jdbcTemplate.update(
                         "UPDATE review_likes SET is_like = false WHERE review_id = ? AND user_id = ?",
                         reviewId, userId
                 );
-                return;
             }
+        } else {
+            // Ничего не было → просто ставим дизлайк
+            jdbcTemplate.update(
+                    "INSERT INTO review_likes (review_id, user_id, is_like) VALUES (?, ?, false)",
+                    reviewId, userId
+            );
+            jdbcTemplate.update(
+                    "UPDATE reviews SET useful = useful - 1 WHERE id = ?",
+                    reviewId
+            );
         }
     }
+
 
     @Override
     public boolean checkDislikeOnReview(Long reviewId, Long userId) {
