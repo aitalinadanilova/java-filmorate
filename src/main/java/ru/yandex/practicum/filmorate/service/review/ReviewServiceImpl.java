@@ -56,6 +56,7 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         Review newReview = reviewStorage.createReview(review);
+
         feedService.createFeed(newReview.getUserId(), EventType.REVIEW, Operation.ADD, newReview.getId());
         return newReview;
     }

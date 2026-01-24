@@ -10,6 +10,4 @@ public interface FeedService {
     void createFeed(Long userId, EventType eventType, Operation operation, Long entityId);
 
     List<Feed> getFeed(Long userId);
-
-    void deleteFeed(Long eventId);
 }

@@ -8,6 +8,4 @@ public interface FeedStorage {
     void createFeed(Feed feed);
 
     List<Feed> getFeed(Long userId);
-
-    void deleteFeed(Long eventId);
 }
