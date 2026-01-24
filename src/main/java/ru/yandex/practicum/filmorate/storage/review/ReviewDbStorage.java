@@ -81,8 +81,10 @@ public class ReviewDbStorage implements ReviewStorage {
     public List<Review> getAllReviews() {
         return jdbcTemplate.query(
                 """
-                        SELECT * FROM reviews
-                        """,
+                SELECT *
+                FROM reviews
+                ORDER BY useful DESC
+                """,
                 mapper
         );
     }
@@ -91,11 +93,12 @@ public class ReviewDbStorage implements ReviewStorage {
     public List<Review> getReviewsByFilm(Long filmId, int count) {
         return jdbcTemplate.query(
                 """
-                        SELECT * FROM reviews
-                        WHERE film_id = ?
-                        ORDER BY id DESC
-                        LIMIT ?
-                        """,
+                SELECT *
+                FROM reviews
+                WHERE film_id = ?
+                ORDER BY useful DESC
+                LIMIT ?
+                """,
                 mapper,
                 filmId,
                 count
