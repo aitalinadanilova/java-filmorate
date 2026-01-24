@@ -31,13 +31,8 @@ public class FeedServiceImpl implements FeedService {
     @Override
     public List<Feed> getFeed(Long userId) {
         if (userStorage.getUser(userId) == null) {
-            throw new NotFoundException("Пользователь с указанным id не найден");
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
         return feedStorage.getFeed(userId);
-    }
-
-    @Override
-    public void deleteFeed(Long eventId) {
-        feedStorage.deleteFeed(eventId);
     }
 }
