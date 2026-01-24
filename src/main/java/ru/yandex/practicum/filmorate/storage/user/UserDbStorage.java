@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
@@ -90,7 +91,16 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriends(Long userId, Long friendId) {
-        jdbcTemplate.update("INSERT INTO friends (user1_id, user2_id, status)values (?, ?, ?)", userId, friendId, true);
+        String sql = """
+            INSERT INTO friends (user1_id, user2_id, status)
+            SELECT ?, ?, true FROM (SELECT 1)
+            WHERE NOT EXISTS (
+                SELECT 1 FROM friends WHERE user1_id = ? AND user2_id = ?
+            )
+            """;
+
+        jdbcTemplate.update(sql, userId, friendId, userId, friendId);
+        log.info("Запрос в друзья отправлен: {} -> {}", userId, friendId);
     }
 
     @Override
@@ -113,6 +123,45 @@ public class UserDbStorage implements UserStorage {
     public List<Long> getLikedFilms(Long userId) {
         String sql = "SELECT film_id FROM likes WHERE user_id = ?";
         return jdbcTemplate.queryForList(sql, Long.class, userId);
+    }
+
+    @Override
+    public void deleteUser(Long userId) {
+        log.info("Удаление пользователя с id={}", userId);
+
+        Integer exists = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM users WHERE id = ?",
+                Integer.class,
+                userId
+        );
+
+        if (exists == null || exists == 0) {
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
+        }
+
+        // Удаляем зависимости
+        jdbcTemplate.update(
+                "DELETE FROM friends WHERE user1_id = ? OR user2_id = ?",
+                userId, userId
+        );
+
+        jdbcTemplate.update(
+                "DELETE FROM likes WHERE user_id = ?",
+                userId
+        );
+
+        jdbcTemplate.update(
+                "DELETE FROM reviews WHERE user_id = ?",
+                userId
+        );
+
+        // Удаляем пользователя
+        jdbcTemplate.update(
+                "DELETE FROM users WHERE id = ?",
+                userId
+        );
+
+        log.info("Пользователь с id={} успешно удалён", userId);
     }
 
 }

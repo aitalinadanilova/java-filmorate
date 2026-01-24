@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service.review;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Review;
@@ -62,17 +63,17 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public Review updateReview(Review review) {
-        if (review.getId() == null) {
-            throw new NullPointerException("Id должен быть указан");
-        }
+        Review oldReview = reviewStorage.getReview(review.getId());
+        if (oldReview == null) throw new NotFoundException("Review not found");
 
-        Review existingReview = reviewStorage.getReview(review.getId());
-        if (existingReview == null) {
-            throw new NotFoundException("Отзыв с id = " + review.getId() + " не найден");
-        }
+        review.setUserId(oldReview.getUserId());
+        review.setFilmId(oldReview.getFilmId());
 
-        feedService.createFeed(review.getUserId(), EventType.REVIEW, Operation.UPDATE, review.getId());
-        return reviewStorage.updateReview(review);
+        reviewStorage.updateReview(review);
+
+        feedService.createFeed(oldReview.getUserId(), EventType.REVIEW, Operation.UPDATE, review.getId());
+
+        return reviewStorage.getReview(review.getId());
     }
 
     @Override
@@ -135,20 +136,28 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    @Transactional
     public void addDislike(Long reviewId, Long userId) {
         log.info("Ставим dislike отзыву с id: {}", reviewId);
-        Review review = reviewStorage.getReview(reviewId);
-        if (review == null) {
+
+        if (reviewStorage.getReview(reviewId) == null) {
             throw new NotFoundException("Отзыв отсутствует");
         }
-
-        User user = userStorage.getUser(userId);
-        if (user == null) {
+        if (userStorage.getUser(userId) == null) {
             throw new NotFoundException("Пользователь отсутствует");
         }
-
         reviewStorage.addDislike(reviewId, userId);
+
     }
 
+    @Override
+    public void removeDislike(Long reviewId, Long userId) {
+        if (reviewStorage.getReview(reviewId) == null) {
+            throw new NotFoundException("Отзыв не найден");
+        }
+        if (userStorage.getUser(userId) == null) {
+            throw new NotFoundException("Пользователь не найден");
+        }
+        reviewStorage.removeDislike(reviewId, userId);
+    }
 }
-
