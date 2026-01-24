@@ -43,10 +43,4 @@ public class FeedDbStorage implements FeedStorage {
         String sql = "SELECT * FROM feed WHERE user_id = ?";
         return jdbcTemplate.query(sql, rowMapper, userId);
     }
-
-    @Override
-    public void deleteFeed(Long eventId) {
-        log.info("Удаление объекта feed с eventId: {}", eventId);
-        jdbcTemplate.update("DELETE FROM feed WHERE event_id = ?", eventId);
-    }
 }
