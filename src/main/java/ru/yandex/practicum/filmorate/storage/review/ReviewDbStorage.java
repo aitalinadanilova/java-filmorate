@@ -195,6 +195,15 @@ public class ReviewDbStorage implements ReviewStorage {
         }
     }
 
+    @Override
+    public void removeDislike(Long reviewId, Long userId) {
+        jdbcTemplate.update("UPDATE reviews SET useful = useful + 1 WHERE id = ?", reviewId);
+
+        jdbcTemplate.update(
+                "DELETE FROM review_likes WHERE review_id = ? AND user_id = ? AND is_like = false",
+                reviewId, userId
+        );
+    }
 
     @Override
     public boolean checkDislikeOnReview(Long reviewId, Long userId) {
