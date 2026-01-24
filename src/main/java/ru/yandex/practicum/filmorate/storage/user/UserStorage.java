@@ -24,4 +24,5 @@ public interface UserStorage {
 
     List<Long> getLikedFilms(Long userId);
 
+    void deleteUser(Long userId);
 }

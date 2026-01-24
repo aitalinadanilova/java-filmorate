@@ -28,11 +28,11 @@ public class FeedServiceImpl implements FeedService {
         feedStorage.createFeed(feed);
     }
 
-    @Override
     public List<Feed> getFeed(Long userId) {
         if (userStorage.getUser(userId) == null) {
             throw new NotFoundException("Пользователь с id=" + userId + " не найден");
         }
+
         return feedStorage.getFeed(userId);
     }
 }

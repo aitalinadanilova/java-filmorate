@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.DataClassRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.User;
@@ -80,9 +81,7 @@ public class ReviewDbStorage implements ReviewStorage {
     @Override
     public List<Review> getAllReviews() {
         return jdbcTemplate.query(
-                """
-                        SELECT * FROM reviews
-                        """,
+                "SELECT * FROM reviews ORDER BY useful DESC",
                 mapper
         );
     }
@@ -90,12 +89,7 @@ public class ReviewDbStorage implements ReviewStorage {
     @Override
     public List<Review> getReviewsByFilm(Long filmId, int count) {
         return jdbcTemplate.query(
-                """
-                        SELECT * FROM reviews
-                        WHERE film_id = ?
-                        ORDER BY id DESC
-                        LIMIT ?
-                        """,
+                "SELECT * FROM reviews WHERE film_id = ? ORDER BY useful DESC LIMIT ?",
                 mapper,
                 filmId,
                 count
@@ -104,7 +98,12 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public void removeReview(Long reviewId) {
-        jdbcTemplate.update("DELETE FROM reviews WHERE id = ?", reviewId);
+        jdbcTemplate.update("DELETE FROM review_likes WHERE review_id = ?", reviewId);
+        int rows = jdbcTemplate.update("DELETE FROM reviews WHERE id = ?", reviewId);
+
+        if (rows == 0) {
+            throw new NotFoundException("Отзыв с id=" + reviewId + " не найден");
+        }
     }
 
     @Override
@@ -159,29 +158,26 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public void addDislike(Long reviewId, Long userId) {
-        // Проверяем, есть ли запись
-        List<Boolean> result = jdbcTemplate.query(
-                "SELECT is_like FROM review_likes WHERE review_id = ? AND user_id = ?",
-                (rs, rowNum) -> rs.getBoolean("is_like"),
-                reviewId,
-                userId
-        );
+        jdbcTemplate.update("UPDATE reviews SET useful = useful - 1 WHERE id = ?", reviewId);
 
-        if (!result.isEmpty()) {
-            if (!result.get(0)) {
-                throw new ValidationException("Пользователь с id = " + userId + " уже поставил дизлайк");
-            } else {
-                // Убираем лайк и ставим дизлайк
-                jdbcTemplate.update(
-                        "UPDATE reviews SET useful = useful - 2 WHERE id = ?", reviewId
-                );
-                jdbcTemplate.update(
-                        "UPDATE review_likes SET is_like = false WHERE review_id = ? AND user_id = ?",
-                        reviewId, userId
-                );
-                return;
-            }
-        }
+        String sql = """
+            INSERT INTO review_likes (review_id, user_id, is_like)
+            SELECT ?, ?, false FROM (SELECT 1)
+            WHERE NOT EXISTS (
+                SELECT 1 FROM review_likes WHERE review_id = ? AND user_id = ?
+            )
+            """;
+        jdbcTemplate.update(sql, reviewId, userId, reviewId, userId);
+    }
+
+    @Override
+    public void removeDislike(Long reviewId, Long userId) {
+        jdbcTemplate.update("UPDATE reviews SET useful = useful + 1 WHERE id = ?", reviewId);
+
+        jdbcTemplate.update(
+                "DELETE FROM review_likes WHERE review_id = ? AND user_id = ? AND is_like = false",
+                reviewId, userId
+        );
     }
 
     @Override

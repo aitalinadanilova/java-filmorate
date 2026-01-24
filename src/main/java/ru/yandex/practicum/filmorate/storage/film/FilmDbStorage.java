@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.DataClassRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -19,10 +18,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -245,54 +240,40 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> getPopularFilms(Long count, Long genreId, Integer year) {
-        // Базовая часть запроса. Постоянна
         StringBuilder sql = new StringBuilder(
-                "SELECT f.ID, f.NAME, COUNT(l.USER_ID) as cnt_like " +
-                        "FROM FILMS f " +
-                        "LEFT JOIN likes l ON l.film_id = f.id "
+                "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                        "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
+                        "FROM films f " +
+                        "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
+                        "LEFT JOIN likes l ON f.id = l.film_id "
         );
 
-        // Список параметров
         List<Object> params = new ArrayList<>();
-
-        // Условия для фильтрации WHERE
         List<String> conditions = new ArrayList<>();
 
-        // Если жанр передан - добавляется JOIN и условие фильтрации
         if (genreId != null) {
             sql.append("JOIN films_genre fg ON f.id = fg.film_id ");
             conditions.add("fg.genre_id = ?");
             params.add(genreId);
         }
 
-        // Если год передан - добавляется JOIN и условие фильтрации
         if (year != null) {
             conditions.add("EXTRACT(YEAR FROM f.release_date) = ?");
             params.add(year);
         }
 
-        // Если хотя бы один фильтр передан - добавляется WHERE
         if (!conditions.isEmpty()) {
-            sql.append("WHERE ")
-                    .append(String.join(" AND ", conditions))
-                    .append(" ");
+            sql.append("WHERE ").append(String.join(" AND ", conditions)).append(" ");
         }
 
-        // Добавляется группировка и сортировка по количеству лайков + ограничение кол-ва
-        sql.append(
-                "GROUP BY f.ID, f.NAME " +
-                        "ORDER BY cnt_like DESC " +
-                        "LIMIT ? "
-        );
-
-        // LIMIT - последний параметр
+        sql.append("GROUP BY f.id, mr.name ORDER BY COUNT(l.user_id) DESC LIMIT ?");
         params.add(count);
 
+        List<Film> films = jdbcTemplate.query(sql.toString(), mapper, params.toArray());
 
-        return jdbcTemplate.query(
-                sql.toString(),
-                new DataClassRowMapper<>(Film.class),
-                params.toArray());
+        loadDataForFilms(films);
+
+        return films;
     }
 
 
@@ -313,7 +294,10 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public void addLike(Long id, Long userId) {
-        jdbcTemplate.update("INSERT INTO likes (film_id, user_id) VALUES (?, ?)", id, userId);
+        String sql = "INSERT INTO likes (film_id, user_id) " +
+                "SELECT ?, ? WHERE NOT EXISTS " +
+                "(SELECT 1 FROM likes WHERE film_id = ? AND user_id = ?)";
+        jdbcTemplate.update(sql, id, userId, id, userId);
     }
 
     @Override
@@ -385,5 +369,59 @@ public class FilmDbStorage implements FilmStorage {
         List<Film> films = jdbcTemplate.query(sql.toString(), mapper, params.toArray());
         loadDataForFilms(films);
         return films;
+    }
+
+    @Override
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        log.info("Получение общих фильмов для пользователей {} и {}", userId, friendId);
+
+        // SQL запрос для получения общих фильмов, отсортированных по популярности (количеству лайков)
+        String sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name, " +
+                "COUNT(l.user_id) AS like_count " +
+                "FROM films f " +
+                "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
+                "LEFT JOIN likes l ON f.id = l.film_id " +
+                "WHERE f.id IN (" +
+                "    SELECT l1.film_id FROM likes l1 WHERE l1.user_id = ? " +
+                "    INTERSECT " +
+                "    SELECT l2.film_id FROM likes l2 WHERE l2.user_id = ? " +
+                ") " +
+                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, " +
+                "f.rating_mpa_id, mr.name " +
+                "ORDER BY like_count DESC";
+
+        try {
+            List<Film> films = jdbcTemplate.query(sql, mapper, userId, friendId);
+            loadDataForFilms(films);
+            return films;
+        } catch (EmptyResultDataAccessException e) {
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public void deleteFilm(Long filmId) {
+        log.info("Удаление фильма с id={}", filmId);
+
+        // Проверяем существование фильма
+        Film film = getFilm(filmId);
+        if (film == null) {
+            throw new NotFoundException("Фильм с id=" + filmId + " не найден");
+        }
+
+        // Удаляем связанные данные (из-за внешних ключей)
+        jdbcTemplate.update("DELETE FROM likes WHERE film_id = ?", filmId);
+        jdbcTemplate.update("DELETE FROM films_genre WHERE film_id = ?", filmId);
+        jdbcTemplate.update("DELETE FROM film_director WHERE film_id = ?", filmId);
+
+        // Удаляем сам фильм
+        int rows = jdbcTemplate.update("DELETE FROM films WHERE id = ?", filmId);
+
+        if (rows == 0) {
+            throw new NotFoundException("Не удалось удалить фильм с id=" + filmId);
+        }
+
+        log.info("Фильм с id={} успешно удален", filmId);
     }
 }

@@ -158,4 +158,26 @@ public class FilmServiceImpl implements FilmService {
 
         return filmStorage.searchFilms(query, searchByTitle, searchByDirector);
     }
+
+    @Override
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        // Проверяем существование пользователей
+        if (userStorage.getUser(userId) == null) {
+            throw new NotFoundException("Пользователь с id=" + userId + " не найден");
+        }
+        if (userStorage.getUser(friendId) == null) {
+            throw new NotFoundException("Пользователь с id=" + friendId + " не найден");
+        }
+
+        log.info("Получение общих фильмов для пользователей {} и {}", userId, friendId);
+        return filmStorage.getCommonFilms(userId, friendId);
+    }
+
+    @Override
+    public void deleteFilm(Long filmId) {
+        filmStorage.getFilm(filmId);
+
+        log.info("Удаление фильма с id={}", filmId);
+        filmStorage.deleteFilm(filmId);
+    }
 }
