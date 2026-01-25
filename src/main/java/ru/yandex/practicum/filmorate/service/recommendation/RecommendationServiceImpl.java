@@ -28,32 +28,32 @@ public class RecommendationServiceImpl implements RecommendationService {
         }
 
         String sql = """
-            WITH 
+            WITH
             current_user_likes AS (
-                SELECT film_id 
-                FROM likes 
+                SELECT film_id
+                FROM likes
                 WHERE user_id = ?
             ),
             similar_users AS (
-                SELECT 
+                SELECT
                     l2.user_id AS similar_user_id,
                     COUNT(DISTINCT l2.film_id) AS common_likes_count
                 FROM likes l1
                 JOIN likes l2 ON l1.film_id = l2.film_id
-                WHERE l1.user_id = ? 
+                WHERE l1.user_id = ?
                     AND l2.user_id != ?
                 GROUP BY l2.user_id
                 HAVING COUNT(DISTINCT l2.film_id) > 0
                 ORDER BY common_likes_count DESC
                 LIMIT 1
-            )            
+            )
             SELECT DISTINCT l.film_id
             FROM likes l
             LEFT JOIN similar_users su ON l.user_id = su.similar_user_id
             WHERE su.similar_user_id IS NOT NULL
                 AND l.film_id NOT IN (SELECT film_id FROM current_user_likes)
             ORDER BY l.film_id
-            """;
+           """;
 
         List<Long> recommendedFilmIds = jdbcTemplate.queryForList(sql, Long.class,
                 userId, userId, userId);
