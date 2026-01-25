@@ -48,6 +48,7 @@ public class FilmServiceImpl implements FilmService {
         log.info("Обновление фильма с id = {}", film.getId());
         return filmStorage.updateFilm(film);
     }
+
     @Override
     public Film getFilm(Long filmId) {
         return filmStorage.getFilm(filmId);
