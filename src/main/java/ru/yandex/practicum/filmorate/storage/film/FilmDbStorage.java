@@ -101,27 +101,26 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> findSortFilmsByDirector(Long directorId, String sortBy) {
-        findDirectorById(directorId);
         String sql;
+
+        String baseSql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
+                "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
+                "FROM films f " +
+                "JOIN film_director fd ON f.id = fd.film_id " +
+                "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id ";
+
         if ("likes".equalsIgnoreCase(sortBy)) {
-            sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
-                    "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
-                    "FROM films f " +
-                    "JOIN film_director fd ON f.id = fd.film_id " +
-                    "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
+            sql = baseSql +
                     "LEFT JOIN likes l ON f.id = l.film_id " +
                     "WHERE fd.director_id = ? " +
-                    "GROUP BY f.id, mr.name " +
+                    "GROUP BY f.id, mpa_name " +
                     "ORDER BY COUNT(l.user_id) DESC";
         } else {
-            sql = "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
-                    "f.rating_mpa_id AS mpa_id, mr.name AS mpa_name " +
-                    "FROM films f " +
-                    "JOIN film_director fd ON f.id = fd.film_id " +
-                    "JOIN rating_mpa mr ON f.rating_mpa_id = mr.id " +
+            sql = baseSql +
                     "WHERE fd.director_id = ? " +
                     "ORDER BY f.release_date ASC";
         }
+
         List<Film> films = jdbcTemplate.query(sql, mapper, directorId);
         loadDataForFilms(films);
         return films;
@@ -210,35 +209,6 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Director> findDirectors() {
-        return jdbcTemplate.query("SELECT * FROM directors", (rs, n) ->
-                Director.builder().id(rs.getLong("id")).name(rs.getString("name")).build());
-    }
-
-    @Override
-    public Director findDirectorById(Long id) {
-        try {
-            return jdbcTemplate.queryForObject("SELECT * FROM directors WHERE id = ?",
-                    (rs, n) -> Director.builder().id(rs.getLong("id")).name(rs.getString("name")).build(), id);
-        } catch (EmptyResultDataAccessException e) {
-            throw new NotFoundException("Режиссёр с id=" + id + " не найден");
-        }
-    }
-
-    @Override
-    public Director createDirector(Director director) {
-        KeyHolder kh = new GeneratedKeyHolder();
-        jdbcTemplate.update(con -> {
-            PreparedStatement ps = con.prepareStatement("INSERT INTO directors (name) VALUES (?)",
-                    new String[]{"id"});
-            ps.setString(1, director.getName());
-            return ps;
-        }, kh);
-        director.setId(kh.getKey().longValue());
-        return director;
-    }
-
-    @Override
     public List<Film> getPopularFilms(Long count, Long genreId, Integer year) {
         StringBuilder sql = new StringBuilder(
                 "SELECT f.id, f.name, f.description, f.release_date, f.duration, " +
@@ -274,22 +244,6 @@ public class FilmDbStorage implements FilmStorage {
         loadDataForFilms(films);
 
         return films;
-    }
-
-
-    @Override
-    public Director updateDirector(Director director) {
-        int rows = jdbcTemplate.update("UPDATE directors SET name = ? WHERE id = ?",
-                director.getName(), director.getId());
-        if (rows == 0) {
-            throw new NotFoundException("Режиссёр с id=" + director.getId() + " не найден");
-        }
-        return director;
-    }
-
-    @Override
-    public boolean deleteDirectorById(Long id) {
-        return jdbcTemplate.update("DELETE FROM directors WHERE id = ?", id) > 0;
     }
 
     @Override

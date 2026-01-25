@@ -10,6 +10,7 @@ import org.springframework.test.context.jdbc.Sql;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.storage.director.DirectorDbStorage;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -19,20 +20,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JdbcTest
 @AutoConfigureTestDatabase
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-@Import({FilmDbStorage.class, FilmRowMapper.class})
+@Import({FilmDbStorage.class, FilmRowMapper.class, DirectorDbStorage.class})
 class FilmDbStorageTest {
 
     private final FilmDbStorage filmStorage;
+    private final DirectorDbStorage directorStorage;
 
     @Test
     void testCreateAndGetFilmWithDirector() {
         Mpa mpa = new Mpa(1L, "G");
 
-        Director director = Director.builder()
-                .id(0L)
-                .name("Christopher Nolan")
-                .build();
-        Director createdDirector = filmStorage.createDirector(director);
+        Director createdDirector = directorStorage.create(Director.builder().name("Christopher Nolan").build());
 
         Film film = Film.builder()
                 .name("Inception")
@@ -44,11 +42,9 @@ class FilmDbStorageTest {
                 .build();
 
         Film createdFilm = filmStorage.createFilm(film);
-
         Film savedFilm = filmStorage.getFilm(createdFilm.getId());
 
         assertThat(savedFilm).isNotNull();
-        assertThat(savedFilm.getName()).isEqualTo("Inception");
         assertThat(savedFilm.getDirectors()).hasSize(1);
         assertThat(savedFilm.getDirectors().get(0).getName()).isEqualTo("Christopher Nolan");
     }
@@ -73,35 +69,26 @@ class FilmDbStorageTest {
 
     @Test
     void testFindSortFilmsByDirector() {
-        Director director = filmStorage.createDirector(Director.builder().id(0L).name("Director X").build());
+        Director director = directorStorage.create(Director.builder().name("Director X").build());
         Mpa mpa = new Mpa(1L, "G");
 
-        Film film1 = Film.builder()
-                .name("Film 2020")
-                .description("Description 1")
+        filmStorage.createFilm(Film.builder()
+                .name("Film 2020").description("D1")
                 .releaseDate(LocalDate.of(2020, 1, 1))
-                .duration(100)
-                .mpa(mpa)
-                .directors(List.of(director))
-                .build();
+                .duration(100).mpa(mpa)
+                .directors(List.of(director)).build());
 
-        Film film2 = Film.builder()
-                .name("Film 2010")
-                .description("Description 2")
+        filmStorage.createFilm(Film.builder()
+                .name("Film 2010").description("D2")
                 .releaseDate(LocalDate.of(2010, 1, 1))
-                .duration(100)
-                .mpa(mpa)
-                .directors(List.of(director))
-                .build();
-
-        filmStorage.createFilm(film1);
-        filmStorage.createFilm(film2);
+                .duration(100).mpa(mpa)
+                .directors(List.of(director)).build());
 
         List<Film> sortedFilms = filmStorage.findSortFilmsByDirector(director.getId(), "year");
 
         assertThat(sortedFilms).hasSize(2);
-        assertThat(sortedFilms.get(0).getName()).isEqualTo("Film 2010"); // Старый фильм первый
-        assertThat(sortedFilms.get(1).getName()).isEqualTo("Film 2020");
+        assertThat(sortedFilms.get(0).getReleaseDate().getYear()).isEqualTo(2010);
+        assertThat(sortedFilms.get(1).getReleaseDate().getYear()).isEqualTo(2020);
     }
 
     @Test

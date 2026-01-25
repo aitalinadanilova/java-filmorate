@@ -19,16 +19,6 @@ public interface FilmService {
 
     void removeLikeToFilm(Long filmId, Long userId);
 
-    List<Director> findDirectors();
-
-    Director findDirectorById(Long id);
-
-    Director createDirector(Director director);
-
-    Director updateDirector(Director director);
-
-    void deleteDirectorById(Long id);
-
     List<Film> findSortFilmsByDirector(Long directorId, String sortBy);
 
     List<Film> getPopularFilms(Long count, Long  genreId, Integer year);

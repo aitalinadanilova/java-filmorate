@@ -22,16 +22,6 @@ public interface FilmStorage {
 
     List<User> getLikes(Long filmId);
 
-    List<Director> findDirectors();
-
-    Director findDirectorById(Long directorId);
-
-    Director createDirector(Director director);
-
-    Director updateDirector(Director director);
-
-    boolean deleteDirectorById(Long directorId);
-
     List<Film> findSortFilmsByDirector(Long directorId, String sortBy);
 
     List<Film> getPopularFilms(Long count, Long genreId, Integer year);
