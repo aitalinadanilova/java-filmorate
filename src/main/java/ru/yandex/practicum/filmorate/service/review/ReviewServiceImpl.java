@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.mapper.ReviewMapper;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.feed.EventType;
@@ -15,6 +17,8 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -28,26 +32,14 @@ public class ReviewServiceImpl implements ReviewService {
     private final FeedService feedService;
 
     @Override
-    public Review createReview(Review review) {
-        log.info("Отзыв {} создан", review);
-        if (review.getContent() == null || review.getContent().isEmpty()) {
-            throw new ValidationException("Отзыв не может быть пустым");
-        }
+    public ReviewDto createReview(ReviewDto dto) {
+        log.info("Создание отзыва: {}", dto);
 
-        if (review.getIsPositive() == null) {
-            throw new ValidationException("Поле isPositive обязательно");
-        }
+        validateReviewDto(dto);
 
-        if (review.getUserId() == null) {
-            throw new ValidationException("Поле userId обязательно");
-        }
-
-        if (review.getFilmId() == null) {
-            throw new ValidationException("Поле filmId обязательно");
-        }
+        Review review = ReviewMapper.toEntity(dto);
 
         if (filmStorage.getFilm(review.getFilmId()) == null) {
-            System.out.println("HERE not film " + review.getFilmId());
             throw new NotFoundException("Фильм с id=" + review.getFilmId() + " не найден");
         }
 
@@ -58,7 +50,9 @@ public class ReviewServiceImpl implements ReviewService {
         Review newReview = reviewStorage.createReview(review);
 
         feedService.createFeed(newReview.getUserId(), EventType.REVIEW, Operation.ADD, newReview.getId());
-        return newReview;
+
+        log.info("Отзыв создан с id={}", newReview.getId());
+        return ReviewMapper.toDto(newReview);
     }
 
     @Override
@@ -119,6 +113,11 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public void removeLike(Long reviewId, Long userId) {
+
+        if (userStorage.getUser(userId) == null) {
+            throw new NotFoundException("Пользователь отсутствует");
+        }
+
         Review review = reviewStorage.getReview(reviewId);
         if (review == null) {
             throw new NotFoundException("Отзыв с таким ID не найден!");
@@ -159,5 +158,41 @@ public class ReviewServiceImpl implements ReviewService {
             throw new NotFoundException("Пользователь не найден");
         }
         reviewStorage.removeDislike(reviewId, userId);
+    }
+
+    @Override
+    public Collection<ReviewDto> findAll(Long filmId, int count) {
+        List<Review> reviews;
+
+        if (filmId != null) {
+            // Проверяем существование фильма
+            if (filmStorage.getFilm(filmId) == null) {
+                throw new NotFoundException("Фильм с id=" + filmId + " не найден");
+            }
+            reviews = reviewStorage.getReviewsByFilm(filmId, count);
+        } else {
+            reviews = reviewStorage.getAllReviews().stream()
+                    .limit(count)
+                    .toList();
+        }
+
+        return reviews.stream()
+                .sorted(Comparator.comparingLong(Review::getUseful).reversed())
+                .map(ReviewMapper::toDto)
+                .toList();
+    }
+
+    private void validateReviewDto(ReviewDto dto) {
+        if (dto.getContent() == null || dto.getContent().isEmpty()) {
+            throw new ValidationException("Контент отзыва не может быть пустым");
+        }
+
+        if (dto.getUserId() == null) {
+            throw new ValidationException("Поле userId обязательно");
+        }
+
+        if (dto.getFilmId() == null) {
+            throw new ValidationException("Поле filmId обязательно");
+        }
     }
 }

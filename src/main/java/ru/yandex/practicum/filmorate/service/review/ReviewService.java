@@ -1,12 +1,16 @@
 package ru.yandex.practicum.filmorate.service.review;
 
+import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.model.Review;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface ReviewService {
 
-    Review createReview(Review review);
+    Collection<ReviewDto> findAll(Long filmId, int count);
+
+    ReviewDto createReview(ReviewDto dto);
 
     Review updateReview(Review review);
 
