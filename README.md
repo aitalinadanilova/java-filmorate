@@ -3,5 +3,5 @@ Template repository for Filmorate project.
 
 
 ## Схема базы данных
-Ниже представлена схема базы данных нашего приложения Filmorate.
+Ниже представлена схема базы данных приложения Filmorate.
 ![Схема базы данных](docs/filmorate dbdiagram.png)
