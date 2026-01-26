@@ -1,6 +1,5 @@
 package ru.yandex.practicum.filmorate.service.review;
 
-import ru.yandex.practicum.filmorate.dto.ReviewDto;
 import ru.yandex.practicum.filmorate.model.Review;
 
 import java.util.Collection;
@@ -8,23 +7,19 @@ import java.util.List;
 
 public interface ReviewService {
 
-    Collection<ReviewDto> findAll(Long filmId, int count);
+    Collection<Review> findAll(Long filmId, int count);
 
-    ReviewDto createReview(ReviewDto dto);
+    Review createReview(Review review);
 
     Review updateReview(Review review);
 
     Review getReview(Long reviewId);
-
-    List<Review> getAllReviews();
 
     void removeReview(Long reviewId);
 
     void addLike(Long reviewId, Long userId);
 
     void removeLike(Long reviewId, Long userId);
-
-    List<Review> getReviewsByFilm(Long filmId, int count);
 
     void addDislike(Long reviewId, Long userId);
 

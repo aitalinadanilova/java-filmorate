@@ -110,14 +110,6 @@ public class ReviewDbStorage implements ReviewStorage {
         jdbcTemplate.update("DELETE FROM reviews WHERE id = ?", reviewId);
     }
 
-    @Override
-    public List<User> getLikes(Long reviewId) {
-        try {
-            return jdbcTemplate.query("SELECT * FROM users WHERE id IN (SELECT user_id FROM review_likes WHERE review_id = ?)", new DataClassRowMapper<>(User.class), reviewId);
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        }
-    }
 
     @Override
     public void addLike(Long reviewId, Long userId) {
@@ -162,18 +154,17 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public void removeLike(Long reviewId, Long userId) {
-        // 1. Уменьшаем счётчик useful
-        jdbcTemplate.update(
-                "UPDATE reviews SET useful = useful - 1 WHERE id = ?",
-                reviewId
+        int rowsAffected = jdbcTemplate.update(
+                "DELETE FROM review_likes WHERE review_id = ? AND user_id = ? AND is_like = true",
+                reviewId, userId
         );
 
-        // 2. Удаляем лайк
-        jdbcTemplate.update(
-                "DELETE FROM review_likes WHERE review_id = ? AND user_id = ?",
-                reviewId,
-                userId
-        );
+        if (rowsAffected > 0) {
+            jdbcTemplate.update(
+                    "UPDATE reviews SET useful = useful - 1 WHERE id = ?",
+                    reviewId
+            );
+        }
     }
 
     @Override
@@ -237,6 +228,16 @@ public class ReviewDbStorage implements ReviewStorage {
                 "DELETE FROM review_likes WHERE review_id = ? AND user_id = ? AND is_like = false",
                 reviewId, userId
         );
+    }
+
+    @Override
+    public boolean hasLike(Long reviewId, Long userId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND user_id = ? AND is_like = true",
+                Integer.class,
+                reviewId, userId
+        );
+        return count != null && count > 0;
     }
 
 }
