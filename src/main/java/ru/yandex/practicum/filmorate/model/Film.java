@@ -4,18 +4,15 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.springframework.validation.annotation.Validated;
 import ru.yandex.practicum.filmorate.validation.BeforeDate;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@Validated
-@EqualsAndHashCode
 @Builder(toBuilder = true)
 @NoArgsConstructor
-@RequiredArgsConstructor
 @AllArgsConstructor
 public class Film {
     private Long id;
@@ -33,11 +30,13 @@ public class Film {
     @Positive
     private Integer duration;
 
-    private List<Long> likes;
-
-    private List<Genre> genres;
-
     @NonNull
     private Mpa mpa;
+
+    private List<Director> directors = new ArrayList<>();
+
+    private List<Genre> genres = new ArrayList<>();
+
+    private List<Long> likes = new ArrayList<>();
 
 }

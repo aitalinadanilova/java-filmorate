@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.util.List;
 
 public interface FilmStorage {
+
     Film createFilm(Film film);
 
     Film updateFilm(Film film);
@@ -20,7 +21,15 @@ public interface FilmStorage {
 
     List<User> getLikes(Long filmId);
 
-    List<Film> getPopularFilms(Long count);
+    List<Film> findSortFilmsByDirector(Long directorId, String sortBy);
 
-    boolean checkLikeOnFilm(Long filmId, Long userId);
+    List<Film> getPopularFilms(Long count, Long genreId, Integer year);
+
+    List<Film> getFilmsByIds(List<Long> filmIds);
+
+    List<Film> searchFilms(String query, boolean byTitle, boolean byDirector);
+
+    List<Film> getCommonFilms(Long userId, Long friendId);
+
+    void deleteFilm(Long filmId);
 }

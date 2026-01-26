@@ -22,4 +22,7 @@ public interface UserStorage {
 
     List<User> getCommonFriends(Long id, Long friendId);
 
+    List<Long> getLikedFilms(Long userId);
+
+    void deleteUser(Long userId);
 }
